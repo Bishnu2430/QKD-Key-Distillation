@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# Vivado / Vitis
+*.jou
+*.log
+*.str
+.Xil/
+vivado_*.backup.*
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.gen/
+*.srcs/**/ip/*/
+!*.xci
+
+# Simulation
+sim_build/
+*.vcd
+*.fst
+*.ghw
+results.xml
+obj_dir/
+
+# Large generated data (keep summaries, not raw dumps)
+results/raw/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/

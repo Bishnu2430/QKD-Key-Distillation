@@ -1,0 +1,13 @@
+id,authors,year,venue,stage,qkd_type,platform,device,frame_or_block_bits,efficiency_f,fer,throughput_mbps,power_w,power_type,validation,link,notes
+walenta2014,Walenta et al.,2014,New J. Phys. 16 013047,full distillation,DV (COW),FPGA,,,,,4,,,real system,https://doi.org/10.1088/1367-2630/16/1/013047,625 MHz clocked system
+constantin2017,Constantin et al.,2017,J. Signal Process. Syst.,sift+EC(LDPC)+PE+PA,DV (COW),FPGA,Virtex-6 LX240T,,,,4,,,real system,https://doi.org/10.1007/s11265-015-1086-1,140 kbps secret over 25 km
+grunenfelder2023,Grünenfelder et al.,2023,Nat. Photon. 17 422,full system,DV (time-bin),detectors+distillation electronics,,,,,64 (secret @10 km),,,real system,https://doi.org/10.1038/s41566-023-01168-2,3.0 Mbps @102.4 km
+liw2023,Li W. et al.,2023,Nat. Photon.,full system,DV,,,,,,110 (secret),,,real system,https://doi.org/10.1038/s41566-023-01166-4,
+dixon2014,Dixon & Sato,2014,Sci. Rep. 4 7275,EC (LDPC),DV,GPU,,,,,,,,software,https://doi.org/10.1038/srep07275,rate-adaptable
+mao2019,Mao & Li,2019,Quantum Inf. Process.,EC (LDPC),DV,CPU,low-cost CPU,,1.1,,60,,,software,https://link.springer.com/article/10.1007/s11128-019-2342-2,bidirectional approach
+liao2025,Liao et al.,2025,Sci. Rep.,EC (polar CA-SCL),DV,FPGA,Kintex UltraScale KU040 + DDR,1048576,1.11,,35.33,34.4,estimated,synthesis + P&R,https://www.nature.com/articles/s41598-025-20146-y,QBER 1-10%; closest neighbour
+cvldpc2023,(see link),2023,,EC (LDPC),CV,FPGA,,262144,,,108.64,,,FPGA,https://www.researchgate.net/publication/375958946,SNR 1.0 dB; different regime
+yang2017,Yang et al.,2017,IEEE Photonics J. 9,PA (Toeplitz size-adaptive),DV,FPGA,,,,,,,,FPGA,https://ieeexplore.ieee.org/document/8063869/,
+liq2019,Li Q. et al.,2019,IEEE Access 7,PA (FFT Toeplitz),DV,FPGA,Virtex-6,,,,,,,FPGA experiment,https://ieeexplore.ieee.org/document/8629901/,~2x prior FPGA Toeplitz
+tang2019,Tang et al.,2019,Sci. Rep.,PA (large-scale),DV,software,,,,,,,,software,https://www.nature.com/articles/s41598-019-50290-1,
+yan2021,Yan Li & Mao,2021,arXiv:2107.01013 (+IEEE),PA (MMH-MH + NTT),DV,FPGA,,100000000,,,1000,,,FPGA,https://arxiv.org/abs/2107.01013,prior FPGA best 116 Mbps @1e6
