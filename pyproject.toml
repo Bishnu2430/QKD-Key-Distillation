@@ -28,4 +28,5 @@ sim = [
 package = false
 
 [tool.pytest.ini_options]
-testpaths = ["model", "tb"]
+testpaths = ["tests"]
+pythonpath = ["."]
