@@ -1,0 +1,23 @@
+{
+  "experiment": "E1 (L1 float model)",
+  "commit": "7621b49",
+  "date": "2026-10-11",
+  "code": {
+    "n": 6144,
+    "m": 2048,
+    "z": 32,
+    "n_b": 192,
+    "m_b": 64,
+    "rate0": 0.6667,
+    "col_weight": 3
+  },
+  "decoder": {
+    "algorithm": "nms",
+    "alpha": 0.75,
+    "max_iters": 50
+  },
+  "frames_per_point": 20,
+  "seed": 2026,
+  "runtime_s": 6.2,
+  "command": "scripts/sweep_e1.py --nb 192 --z 32 --frames 20 --qber 0.01 0.02 0.03 0.04 0.05 --max-iters 50"
+}
