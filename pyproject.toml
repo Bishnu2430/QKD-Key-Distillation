@@ -1,0 +1,31 @@
+[project]
+name = "qkd-key-distillation"
+version = "0.1.0"
+description = "Reference models and analysis for a rate-adaptive FPGA QKD key-distillation accelerator"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+
+dependencies = [
+    # reference models (L1 float, L2 bit-true) and sweeps
+    "numpy>=1.26",
+    "numba>=0.60",          # JIT for the Monte-Carlo FER sweeps
+    "scipy>=1.11",          # statistics, optimisation for code design
+    # analysis and figures
+    "matplotlib>=3.8",
+    "pyyaml>=6.0",          # result.yaml headers
+    "tqdm>=4.66",           # progress on long sweeps
+]
+
+[project.optional-dependencies]
+# RTL verification side (needs Verilator >= 5.036, see docs/12-toolflow.md)
+sim = [
+    "cocotb>=2.0",
+    "pytest>=8.0",
+]
+
+[tool.uv]
+# keep the environment in the repo; .venv is gitignored
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["model", "tb"]
