@@ -1,0 +1,105 @@
+# Week-1 toolflow proof (docs/15-vivado-gui-guide.md). NOT an accelerator result.
+# Produced by: Bishnu, Vivado GUI, project mode. Recorded by Claude from the reports.
+
+commit: ea1f9c8          # repo state at the time of the run (docs only; RTL still untracked)
+date: 2026-10-11
+produced_by: "Vivado GUI (project mode), run impl_1"
+
+tools:
+  vivado: "v2025.2 (64-bit), SW Build 6299465 (14 Nov 2025)"
+  install: "D:\\AMDDesignTools\\2025.2\\Vivado"
+
+design:
+  top: axis_smoke
+  description: "AXI4-Stream FIFO, W=64, DEPTH=1024, with running XOR checksum"
+  sources: [rtl/axis_smoke.sv]
+  constraints: [constraints/timing_125mhz.xdc]
+  testbench: tb/tb_axis_smoke.sv
+
+implementation:
+  part: xc7z020clg400-1
+  speed_grade: -1
+  mode: out_of_context
+  clock_ns: 8.000           # 125 MHz target (REQ-IMP-02)
+  input_delay_ns: 1.000
+  output_delay_ns: 1.000
+
+timing:
+  wns_ns: 2.565
+  tns_ns: 0.000
+  whs_ns: 0.151
+  ths_ns: 0.000
+  wpws_ns: 3.500
+  failing_endpoints_setup: 0
+  failing_endpoints_hold: 0
+  total_endpoints: 428
+  fmax_mhz_est: 184.0       # 1 / (8.000 - 2.565)
+  worst_setup_path:
+    from: "mem_reg_0/CLKBWRCLK (RAMB36E1)"
+    to: "m_axis_tdata[0] (output port)"
+    data_path_delay_ns: 3.427
+    logic_ns: 2.454         # 71.6%
+    route_ns: 0.973         # 28.4%
+    logic_levels: 0
+    clock_uncertainty_ns: 0.035
+  worst_hold_path:
+    from: "wr_ptr_reg[7]/C (FDRE)"
+    to: "mem_reg_1/ADDRARDADDR[12] (RAMB36E1)"
+    data_path_delay_ns: 0.302
+
+utilization:
+  slice_luts: 97            # 0.18% of 53,200
+  lut_as_logic: 97
+  lut_as_memory: 0
+  slice_registers: 96       # 0.09% of 106,400
+  registers_as_latch: 0     # must stay 0
+  carry4: 3
+  f7_f8_muxes: 0
+  block_ram_tile: 2         # 1.43% of 140; both RAMB36E1
+  ramb18: 0
+  dsp: 0
+  bonded_iob: 0             # confirms out-of-context
+  bufgctrl: 0
+
+power:
+  method: vectorless        # no SAIF yet; becomes 'saif' from M5
+  confidence: Medium
+  total_w: 0.111
+  dynamic_w: 0.008
+  static_w: 0.103
+  breakdown_w:
+    clocks: 0.001
+    slice_logic: "<0.001"
+    signals: "<0.001"
+    block_ram: 0.006
+  vccint_v: 1.000
+  vccint_total_a: 0.016
+
+thermal:
+  ambient_c: 25.0
+  junction_c: 26.3
+  max_ambient_c: 83.7
+  thermal_margin_c: 58.7
+  theta_ja_c_per_w: 11.5
+  airflow_lfm: 250
+  heat_sink: none
+
+derived:
+  throughput_at_125mhz_gbps: 8.0      # 64 bits x 125 MHz
+  throughput_at_fmax_gbps: 11.8       # 64 bits x 184.0 MHz
+  energy_per_bit_dynamic_pj: 1.0      # 0.008 W / 8.0 Gb/s
+  energy_per_bit_total_pj: 13.9       # 0.111 W / 8.0 Gb/s
+  min_latency_cycles: 2               # accept -> output register valid
+  min_latency_ns_at_125mhz: 16.0
+
+verification:
+  behavioural_sim: PASS               # tb_axis_smoke, random back-pressure, checksum checked
+  post_impl_timing_sim: not_run
+  saif_power: not_run
+
+notes: >
+  Purpose: prove SystemVerilog elaboration, block-RAM inference, AXI4-Stream
+  handshake implementation, timing closure and report generation on the target
+  part. Power is a vectorless estimate and must not be quoted as measured.
+  Numbers transcribed from axis_smoke_{utilization_placed,timing_summary_routed,power_routed}.rpt
+  in this directory.
