@@ -39,6 +39,8 @@ The target device is the AMD Zynq-7020 (`xc7z020clg400-1`). No physical board or
 | 11 | [Evaluation plan](docs/11-evaluation-plan.md) | Experiments E1–E7, metrics, reporting rules | Outline |
 | 12 | [Toolflow and reproducibility](docs/12-toolflow.md) | Environment setup, pinned versions, how to reproduce | Draft |
 | 13 | [RTL coding guidelines](docs/13-rtl-coding-guidelines.md) | SystemVerilog conventions | Outline |
+| 14 | [Problem, solution and rationale](docs/14-rationale.md) | **Why** — problem statement, our solution, the reason behind every choice, methodology | Draft |
+| 15 | [Vivado GUI guide](docs/15-vivado-gui-guide.md) | Step-by-step procedure for every Vivado task, done by hand in the GUI | Draft |
 | — | [Decision records](docs/decisions/) | Why each major choice was made | Ongoing |
 | — | [Progress log](docs/log/) | Weekly notes | Ongoing |
 
