@@ -27,52 +27,58 @@
 
 ## 2. Prove the flow (Week 1)
 
-Synthesise and implement a tiny AXI4-Stream core **out of context**. This avoids running out of package pins, because a 64-bit stream core has more ports than the package has user I/Os.
+**All Vivado work is done by hand in the GUI** — see [15-vivado-gui-guide](15-vivado-gui-guide.md) for the step-by-step procedure. In outline: create an RTL project on `xc7z020clg400-1`, add a small AXI4-Stream core and a 125 MHz constraint, enable **out-of-context** synthesis (the core has more ports than the clg400 package has user I/O pins), then run synthesis and implementation.
 
-```tcl
-# scripts/vivado/ooc_build.tcl  (non-project mode)
-set part  xc7z020clg400-1
-set top   [lindex $argv 0]
-read_verilog -sv [glob rtl/*.sv]
-read_xdc scripts/vivado/timing_125mhz.xdc
-synth_design -top $top -part $part -mode out_of_context
-opt_design
-place_design
-phys_opt_design
-route_design
-report_utilization     -file results/${top}_util.rpt
-report_timing_summary  -file results/${top}_timing.rpt
-report_power           -file results/${top}_power.rpt
-write_checkpoint -force results/${top}_routed.dcp
-```
-
-```tcl
-# scripts/vivado/timing_125mhz.xdc
-create_clock -period 8.000 -name clk [get_ports clk]
-```
-
-Run it with `vivado -mode batch -source scripts/vivado/ooc_build.tcl -tclargs axis_counter`. **Pass criteria:** the reports exist, WNS ≥ 0, and you can read the LUT, FF and BRAM counts.
+**Pass criteria:** 0 errors, WNS ≥ 0, block RAM inferred, reports copied into `results/` with a `result.yaml` header.
 
 ## 3. Power with switching activity (L6)
-1. Run post-implementation timing simulation of representative frames and write a SAIF file.
-2. In Vivado: `open_checkpoint` → `read_saif` → `report_power`.
-3. Record the confidence level Vivado reports alongside the number (REQ-REP-02).
+1. Run post-implementation timing simulation on representative frames, with SAIF capture enabled.
+2. Open the implemented design and run Report Power with that SAIF file.
+3. Record the number **and** the confidence level Vivado reports (REQ-REP-02).
 
-Exact commands go here after M5.
+Full menu-level steps: [15 §8](15-vivado-gui-guide.md#8-simulation-and-the-saif-power-flow).
 
 ## 4. Version pins (fill in on install)
 
 | Tool | Version | Date installed |
 |---|---|---|
-| Vivado | | |
-| Verilator | | |
-| Icarus Verilog | | |
-| Python | | |
-| cocotb | | |
-| NumPy / Numba | | |
+| Vivado | **v2025.2 (64-bit)**, SW Build 6299465 (14 Nov 2025), installed at D:/AMDDesignTools/2025.2/Vivado | 2026-10-11 |
+| Verilator | **5.052** (built from source, tag `v5.052`, installed in `/usr/local/bin`) | 2026-10-11 |
+| Icarus Verilog | 12.0 (stable) | 2026-10-11 |
+| Python | 3.12.3 (Ubuntu 24.04) | 2026-10-11 |
+| uv | 0.13.0 (installed via pipx) | 2026-10-11 |
+| cocotb | 2.1.0 | 2026-10-11 |
+| NumPy / Numba | 2.5.4 / 0.68.0 (SciPy 1.18.1, Matplotlib 3.11.2) | 2026-10-11 |
+
+> **Verilator is built from source, not from apt.** cocotb 2.x requires Verilator >= 5.036, and Ubuntu 24.04 ships 5.020. The apt package was removed (`apt-get remove verilator`) so only the source build is on the system. Verify with `verilator --version` before trusting any simulation result.
+>
+> Build recipe used (Ubuntu 24.04, as root):
+>
+> ```bash
+> apt-get install -y git help2man perl make autoconf g++ flex bison ccache libgoogle-perftools-dev numactl perl-doc libfl2 libfl-dev zlib1g-dev
+> git clone https://github.com/verilator/verilator.git /opt/src/verilator
+> cd /opt/src/verilator && git checkout v5.052
+> autoconf && ./configure && make -j$(nproc) && make install
+> ```
+>
+> Toolchain smoke test (cocotb 2.1.0 driving a `always_ff` flip-flop through Verilator 5.052): **passed**, 2026-10-11.
+
+### 4.1 Python environment (uv)
+The repository is a uv project: [`pyproject.toml`](../pyproject.toml) declares the dependencies and `uv.lock` pins the exact resolved versions (commit the lock file).
+
+```bash
+cd /mnt/d/QKD-Key-Distillation
+uv sync --extra sim     # creates .venv with models + cocotb
+uv run python -c "import numpy, numba; print(numba.__version__)"
+uv run pytest           # once tests exist
+```
+
+The `sim` extra holds the RTL-verification packages (cocotb, pytest); plain `uv sync` installs only what the models need.
 
 ## 5. Reproducing a result
-Every file in `results/` starts with a header:
+Each run gets its own folder under `results/`, holding the Vivado reports, a machine-readable `result.yaml` header and a `README.md` evaluation report (timing, utilisation, power breakdown, thermal and derived metrics). See [results/axis_smoke_xc7z020clg400-1](../results/axis_smoke_xc7z020clg400-1/README.md) as the pattern.
+
+Every `result.yaml` starts with a header:
 
 ```yaml
 commit: <git sha>
