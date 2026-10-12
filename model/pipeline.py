@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from . import hashing
+from . import fixed, hashing
 from .code import RateMask
 from .decoder import decode
 from .frame import make_frame
@@ -76,19 +76,35 @@ def process_frame(
     qber_est: float | None = None,
     tag_bits: int = hashing.TAG_BITS,
     algorithm: str = "nms",
+    backend: str = "float",
+    cfg: fixed.FixedConfig = fixed.DEFAULT,
 ) -> FrameOutcome:
-    """Reconcile and verify one frame (spec sections 3 and 4)."""
+    """Reconcile and verify one frame (spec sections 3 and 4).
+
+    ``backend`` selects the model level: ``"float"`` is L1, ``"fixed"`` is the
+    bit-true L2 model that the RTL is checked against.
+    """
     frame = make_frame(mask, qber, rng, qber_est=qber_est)
     key_pos, _, _ = mask.positions()
 
-    res = decode(
-        mask.code,
-        frame.llr,
-        frame.syndrome,
-        max_iters=max_iters,
-        alpha=alpha,
-        algorithm=algorithm,
-    )
+    if backend == "fixed":
+        llr_fixed = fixed.initial_llr(
+            mask, frame.y_key, qber if qber_est is None else qber_est, cfg
+        )
+        res = fixed.decode(
+            mask.code, llr_fixed, frame.syndrome, max_iters=max_iters, cfg=cfg
+        )
+    elif backend == "float":
+        res = decode(
+            mask.code,
+            frame.llr,
+            frame.syndrome,
+            max_iters=max_iters,
+            alpha=alpha,
+            algorithm=algorithm,
+        )
+    else:
+        raise ValueError("backend must be 'float' or 'fixed'")
     x_hat_key = res.key_bits(key_pos)
     residual = int(np.count_nonzero(x_hat_key ^ frame.x_key))
 
