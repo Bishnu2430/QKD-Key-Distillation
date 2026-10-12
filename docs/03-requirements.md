@@ -58,7 +58,7 @@ Targets apply at the post-implementation Fmax on `xc7z020clg400-1`, with $n = 65
 
 | ID | Requirement | Target | Stretch | Rationale | Verify |
 |---|---|---|---|---|---|
-| REQ-PERF-01 | Reconciliation efficiency for $Q \in [2\%, 8\%]$ at FER ≤ $10^{-2}$ | $f \le 1.15$ | $f \le 1.10$ | Comparable to f ≈ 1.1 in Mao & Li 2019 and f ≈ 1.11 in Liao 2025 | T (E1, L2) |
+| REQ-PERF-01 | Reconciliation efficiency for $Q \in [2\%, 8\%]$ at FER ≤ $10^{-2}$ | $f \le 1.15$ **(not met: M3 measures 1.29–1.56; see [results/m3_code_design_v3](../results/m3_code_design_v3/README.md))** | $f \le 1.10$ | Comparable to f ≈ 1.1 in Mao & Li 2019 and f ≈ 1.11 in Liao 2025 | T (E1, L2) |
 | REQ-PERF-02 | Reconciliation efficiency at the range edges ($Q$ = 1%, 9%, 10%) | $f \le 1.25$ | $f \le 1.15$ | High-rate and low-rate edges are harder | T (E1) |
 | REQ-PERF-03 | Frame error rate at the selected operating point | FER ≤ $10^{-2}$ | ≤ $10^{-3}$ | Failed frames waste raw key | T (E1) |
 | REQ-PERF-04 | Decoder throughput at $Q = 5\%$ using the average iteration count | ≥ 50 Mbps | ≥ 100 Mbps | Matches tens-of-Mbps sifted-key rates of modern systems | A (E3, E4) |

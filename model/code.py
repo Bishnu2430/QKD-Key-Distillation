@@ -172,20 +172,31 @@ def make_qc_code(
 
 
 def _creates_four_cycle(base: np.ndarray, r: int, c: int, z: int) -> bool:
-    """Does the (partially filled) entry (r, c) close a length-4 cycle?"""
+    """Does the (partially filled) entry (r, c) close a length-4 cycle?
+
+    Two columns c1, c2 sharing rows r1, r2 form a 4-cycle in the lifted graph
+    when (B[r1,c1] - B[r1,c2]) == (B[r2,c1] - B[r2,c2]) mod Z. Vectorised: the
+    shift-assignment loop calls this once per attempt, so a Python double loop
+    here dominates construction time for anything but a toy code.
+    """
     m_b, n_b = base.shape
-    other_rows = [rr for rr in range(m_b) if rr != r and base[rr, c] != ZERO_BLOCK]
-    for c2 in range(n_b):
-        if c2 == c or base[r, c2] == ZERO_BLOCK:
-            continue
-        d1 = (int(base[r, c]) - int(base[r, c2])) % z
-        for r2 in other_rows:
-            if base[r2, c2] == ZERO_BLOCK:
-                continue
-            d2 = (int(base[r2, c]) - int(base[r2, c2])) % z
-            if d1 == d2:
-                return True
-    return False
+    filled = base != ZERO_BLOCK
+
+    other_cols = np.flatnonzero(filled[r])
+    other_cols = other_cols[other_cols != c]
+    if other_cols.size == 0:
+        return False
+
+    other_rows = np.flatnonzero(filled[:, c])
+    other_rows = other_rows[other_rows != r]
+    if other_rows.size == 0:
+        return False
+
+    d1 = (int(base[r, c]) - base[r, other_cols]) % z              # (C,)
+    sub = base[np.ix_(other_rows, other_cols)]                    # (R, C)
+    d2 = (base[other_rows, c][:, None] - sub) % z                 # (R, C)
+    hit = (sub != ZERO_BLOCK) & (d2 == d1[None, :])
+    return bool(hit.any())
 
 
 # ---------------------------------------------------------------------------
@@ -345,3 +356,15 @@ def puncture_heavy_columns(code: QCCode, count: int, mask_id: int = 0) -> RateMa
     degrees = code.column_degrees()
     order = np.argsort(-degrees, kind="stable")
     return make_mask(code, mask_id, punctured_cols=order[:count].tolist())
+
+
+def save_code(path, code: QCCode, **metadata) -> None:
+    """Store a code as an .npz (base matrix, lifting size and free-form notes)."""
+    np.savez_compressed(path, base=code.base, z=code.z,
+                        **{k: np.asarray(v) for k, v in metadata.items()})
+
+
+def load_code(path) -> QCCode:
+    """Load a code saved by :func:`save_code`."""
+    data = np.load(path, allow_pickle=False)
+    return QCCode(base=data["base"], z=int(data["z"]))
