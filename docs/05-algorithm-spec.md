@@ -38,12 +38,14 @@ Sifting, parameter estimation, the finite-key length computation and authenticat
 
 | Parameter | Meaning | Default | Status |
 |---|---|---|---|
-| `W_CH` | Channel-LLR magnitude width (signed) | 5 → $M = 15$ | TBC (E2) |
-| `W_MSG` | Check-to-variable message width | 6 → $M = 31$ | TBC (E2) |
-| `W_APP` | A-posteriori LLR width | 8 → $M = 127$ | TBC (E2) |
-| $\Delta$ | LLR quantisation step | 0.25 | TBC (E2) |
-| $\alpha$ | Normalisation factor | 0.75, implemented as $(v\gg1)+(v\gg2)$ | TBC (E2) |
+| `W_CH` | Channel-LLR magnitude width (signed) | 5 → $M = 15$ | Provisional |
+| `W_MSG` | Check-to-variable message width | 6 → $M = 31$ | **Confirmed by E2**: 5 bits collapses, 7 gains nothing |
+| `W_APP` | A-posteriori LLR width | 8 → $M = 127$ | **E2**: 7 bits already matches float; 8 keeps one bit of margin |
+| $\Delta$ | LLR quantisation step | 0.25 | **Confirmed by E2**: 0.5 is worse, 0.125 gains nothing |
+| $\alpha$ | Normalisation factor | 0.75, implemented as $(v\gg1)+(v\gg2)$ | **Confirmed by E2**: 0.5 and 1.0 are both worse; 0.875 ties but costs more |
 
+
+> E2 was run on the baseline M2 code (n = 4,096), not the final code set — see [results/e2_quantisation](../results/e2_quantisation/README.md). Re-run it on the M3 code before freezing these widths in RTL.
 ## 3. Reconciliation
 
 ### 3.1 Code representation (QC-LDPC)

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from . import hashing
+from . import fast, fixed, hashing
 from .code import RateMask
 from .decoder import decode
 from .frame import make_frame
@@ -76,19 +76,45 @@ def process_frame(
     qber_est: float | None = None,
     tag_bits: int = hashing.TAG_BITS,
     algorithm: str = "nms",
+    backend: str = "float",
+    cfg: fixed.FixedConfig = fixed.DEFAULT,
+    accelerate: bool = True,
 ) -> FrameOutcome:
-    """Reconcile and verify one frame (spec sections 3 and 4)."""
+    """Reconcile and verify one frame (spec sections 3 and 4).
+
+    ``backend`` selects the model level: ``"float"`` is L1, ``"fixed"`` is the
+    bit-true L2 model that the RTL is checked against. ``accelerate`` routes to
+    the Numba kernels in :mod:`model.fast`, which are tested to be exactly
+    equivalent to the reference implementations.
+    """
     frame = make_frame(mask, qber, rng, qber_est=qber_est)
     key_pos, _, _ = mask.positions()
 
-    res = decode(
-        mask.code,
-        frame.llr,
-        frame.syndrome,
-        max_iters=max_iters,
-        alpha=alpha,
-        algorithm=algorithm,
-    )
+    if backend == "fixed":
+        llr_fixed = fixed.initial_llr(
+            mask, frame.y_key, qber if qber_est is None else qber_est, cfg
+        )
+        decode_fixed = fast.decode_fixed if accelerate else fixed.decode
+        res = decode_fixed(
+            mask.code, llr_fixed, frame.syndrome, max_iters=max_iters, cfg=cfg
+        )
+    elif backend == "float":
+        if accelerate and algorithm == "nms":
+            res = fast.decode_float(
+                mask.code, frame.llr, frame.syndrome,
+                max_iters=max_iters, alpha=alpha,
+            )
+        else:
+            res = decode(
+                mask.code,
+                frame.llr,
+                frame.syndrome,
+                max_iters=max_iters,
+                alpha=alpha,
+                algorithm=algorithm,
+            )
+    else:
+        raise ValueError("backend must be 'float' or 'fixed'")
     x_hat_key = res.key_bits(key_pos)
     residual = int(np.count_nonzero(x_hat_key ^ frame.x_key))
 
@@ -174,6 +200,8 @@ def measure(
         "n": mask.code.n,
         "n_key": mask.n_key,
         "rate": mask.rate,
+        "p": mask.p,
+        "s": mask.s,
         "frames": n_frames,
         "fer": 1.0 - n_ok / n_frames,
         "efficiency": efficiency(leak, mask.n_key, qber),
@@ -181,4 +209,7 @@ def measure(
         "avg_iters_ok": float(np.mean(iters_ok)) if iters_ok else float("nan"),
         "max_iters_ok": int(np.max(iters_ok)) if iters_ok else 0,
         "undetected": sum(1 for o in outcomes if o.ok and o.bit_errors_out > 0),
+        # f < 1 with frames actually decoding would mean the leakage accounting
+        # is wrong (spec 3.5 rank condition), not that we beat Slepian-Wolf
+        "leak_below_limit": bool(efficiency(leak, mask.n_key, qber) < 1.0),
     }

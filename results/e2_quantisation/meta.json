@@ -1,0 +1,18 @@
+{
+  "experiment": "E2 quantisation (L1 float vs L2 bit-true)",
+  "commit": "d9d457b",
+  "date": "2026-10-12",
+  "code": {
+    "n": 4096,
+    "rate0": 0.6719,
+    "z": 32,
+    "n_b": 128,
+    "m_b": 42,
+    "col_weight": 3
+  },
+  "frames_per_point": 30,
+  "max_iters": 60,
+  "seed": 2026,
+  "runtime_s": 170.4,
+  "command": "scripts/sweep_e2.py --frames 30 --qber 0.02 0.03 0.04"
+}

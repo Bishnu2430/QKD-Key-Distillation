@@ -1,0 +1,32 @@
+{
+  "experiment": "C1 rate adaptation (L1 float model)",
+  "commit": "98520b0",
+  "date": "2026-10-12",
+  "code": {
+    "n": 8192,
+    "m": 2688,
+    "z": 32,
+    "n_b": 256,
+    "m_b": 84,
+    "rate0": 0.6719,
+    "col_weight": 3
+  },
+  "decoder": {
+    "algorithm": "nms",
+    "alpha": 0.75,
+    "max_iters": 60
+  },
+  "frames_per_point": 25,
+  "fer_target": 0.1,
+  "f_ladder": [
+    1.05,
+    1.1,
+    1.2,
+    1.35,
+    1.55,
+    1.8
+  ],
+  "seed": 2026,
+  "runtime_s": 372.8,
+  "command": "scripts/sweep_c1.py --frames 25 --qber 0.01 0.02 0.03 0.04 0.05 0.06"
+}

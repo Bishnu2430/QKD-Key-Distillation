@@ -122,7 +122,7 @@ def make_qc_code(
     n_b: int,
     m_b: int,
     z: int,
-    col_weight: int = 3,
+    col_weight: int | np.ndarray | list[int] = 3,
     seed: int = 0,
     shift_attempts: int = 200,
 ) -> QCCode:
@@ -138,7 +138,12 @@ def make_qc_code(
     in the lifted graph when
     ``(B[r1,c1] - B[r1,c2]) == (B[r2,c1] - B[r2,c2])  (mod Z)``.
     """
-    if col_weight > m_b:
+    weights = (np.full(n_b, int(col_weight), dtype=np.int32)
+               if np.isscalar(col_weight)
+               else np.asarray(col_weight, dtype=np.int32))
+    if weights.size != n_b:
+        raise ValueError("col_weight must be a scalar or one weight per column")
+    if weights.max() > m_b:
         raise ValueError("column weight cannot exceed the number of block rows")
     rng = np.random.default_rng(seed)
     base = np.full((m_b, n_b), ZERO_BLOCK, dtype=np.int32)
@@ -147,7 +152,7 @@ def make_qc_code(
     row_load = np.zeros(m_b, dtype=np.int64)
     for c in range(n_b):
         order = np.lexsort((rng.random(m_b), row_load))
-        rows = order[:col_weight]
+        rows = order[: weights[c]]
         for r in rows:
             base[r, c] = 0  # placeholder, shift assigned below
             row_load[r] += 1
@@ -283,3 +288,60 @@ def spread_columns(n_b: int, count: int, offset: int = 0) -> list[int]:
         raise ValueError("cannot select more columns than the code has")
     step = n_b / count
     return sorted({int((i + 0.5) * step + offset) % n_b for i in range(count)})
+
+
+def mask_for_rate(
+    code: QCCode,
+    target_rate: float,
+    mask_id: int = 0,
+    offset: int = 0,
+) -> RateMask:
+    """Build the mask whose effective rate is closest to ``target_rate``.
+
+    Puncturing raises the rate, shortening lowers it (spec section 3.3):
+
+        R > R0:  pi    = 1 - R0/R          -> p_b = round(n_b * pi)
+        R < R0:  sigma = (R0 - R)/(1 - R)  -> s_b = round(n_b * sigma)
+
+    Columns are spread evenly across the base matrix so the structure stays
+    balanced. The achieved rate is ``mask.rate``, which differs slightly from
+    the target because masks work at base-column granularity.
+    """
+    if not 0.0 < target_rate < 1.0:
+        raise ValueError("target rate must lie in (0, 1)")
+    r0 = code.rate0
+    if target_rate > r0:
+        frac = 1.0 - r0 / target_rate
+        count = int(round(code.n_b * frac))
+        count = min(count, code.n_b - 1)
+        return make_mask(code, mask_id, punctured_cols=spread_columns(code.n_b, count, offset))
+    frac = (r0 - target_rate) / (1.0 - target_rate)
+    count = int(round(code.n_b * frac))
+    count = min(count, code.n_b - 1)
+    return make_mask(code, mask_id, shortened_cols=spread_columns(code.n_b, count, offset))
+
+
+def irregular_weights(
+    n_b: int,
+    heavy_fraction: float = 0.15,
+    heavy_weight: int = 6,
+    light_weight: int = 3,
+) -> np.ndarray:
+    """Column weights with a block of heavy columns at the front.
+
+    The heavy columns are the ones worth puncturing: a variable node whose
+    channel LLR is zero can only be recovered through its neighbours, so it
+    needs more of them. Classic protograph practice, and the fix that
+    results/c1_rate_adaptation points at.
+    """
+    weights = np.full(n_b, light_weight, dtype=np.int32)
+    n_heavy = int(round(n_b * heavy_fraction))
+    weights[:n_heavy] = heavy_weight
+    return weights
+
+
+def puncture_heavy_columns(code: QCCode, count: int, mask_id: int = 0) -> RateMask:
+    """Mask that punctures the ``count`` highest-degree base columns."""
+    degrees = code.column_degrees()
+    order = np.argsort(-degrees, kind="stable")
+    return make_mask(code, mask_id, punctured_cols=order[:count].tolist())
