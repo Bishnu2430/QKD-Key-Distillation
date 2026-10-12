@@ -109,6 +109,7 @@ Targets apply at the post-implementation Fmax on `xc7z020clg400-1`, with $n = 65
 | Item | Decided by | When |
 |---|---|---|
 | Number of rate points and QBER bins (REQ-FUN-03) | Code design (06) | M3 |
+| **Single mother code (REQ-FUN-03)** — the L1 sweep shows one code cannot cover 1-10% within the puncture budget; likely becomes two mother codes | Code design (06), results/c1_rate_adaptation | M3 |
 | Default $I_{max}$ (REQ-FUN-04) | E3 | M3 |
 | RTL range of $N$ (REQ-FUN-07) and PA target (REQ-PERF-08) | C3 analysis | M6 |
 | Latency bound (REQ-PERF-05) | Architecture (07) | M4 |

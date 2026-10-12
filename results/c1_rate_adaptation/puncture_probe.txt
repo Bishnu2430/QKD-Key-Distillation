@@ -1,0 +1,26 @@
+# scripts/probe_puncturing.py, 25 frames/point, max 60 iterations, seed 4242
+# base 84x256, Z=32 (n=8192), R0=0.672
+regular   R0=0.672 edges=768
+irregular R0=0.672 edges=921 degrees=[0, 0, 0, 205, 0, 0, 51]
+
+ QBER       code  punct_cols   p_bits       R       f    FER   iters
+ 1.0%    regular          26      832   0.748   3.229   0.00     3.6
+ 1.0%    regular          38     1216   0.789   2.725   0.00     5.5
+ 1.0%    regular          51     1632   0.839   2.113   0.00     9.4
+ 1.0%  irregular          26      832   0.748   3.229   0.00     3.3
+ 1.0%  irregular          38     1216   0.789   2.725   1.00     nan
+ 1.0%  irregular          51     1632   0.839   2.113   1.00     nan
+
+ 2.0%    regular          26      832   0.748   1.844   0.00     7.2
+ 2.0%    regular          38     1216   0.789   1.557   0.68    23.9
+ 2.0%    regular          51     1632   0.839   1.207   1.00     nan
+ 2.0%  irregular          26      832   0.748   1.844   0.00     5.6
+ 2.0%  irregular          38     1216   0.789   1.557   1.00     nan
+ 2.0%  irregular          51     1632   0.839   1.207   1.00     nan
+
+ 3.0%    regular          26      832   0.748   1.342   0.96    24.0
+ 3.0%    regular          38     1216   0.789   1.133   1.00     nan
+ 3.0%    regular          51     1632   0.839   0.878   1.00     nan
+ 3.0%  irregular          26      832   0.748   1.342   0.24    16.5
+ 3.0%  irregular          38     1216   0.789   1.133   1.00     nan
+ 3.0%  irregular          51     1632   0.839   0.878   1.00     nan

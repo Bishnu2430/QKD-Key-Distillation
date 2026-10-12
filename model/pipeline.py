@@ -174,6 +174,8 @@ def measure(
         "n": mask.code.n,
         "n_key": mask.n_key,
         "rate": mask.rate,
+        "p": mask.p,
+        "s": mask.s,
         "frames": n_frames,
         "fer": 1.0 - n_ok / n_frames,
         "efficiency": efficiency(leak, mask.n_key, qber),
@@ -181,4 +183,7 @@ def measure(
         "avg_iters_ok": float(np.mean(iters_ok)) if iters_ok else float("nan"),
         "max_iters_ok": int(np.max(iters_ok)) if iters_ok else 0,
         "undetected": sum(1 for o in outcomes if o.ok and o.bit_errors_out > 0),
+        # f < 1 with frames actually decoding would mean the leakage accounting
+        # is wrong (spec 3.5 rank condition), not that we beat Slepian-Wolf
+        "leak_below_limit": bool(efficiency(leak, mask.n_key, qber) < 1.0),
     }

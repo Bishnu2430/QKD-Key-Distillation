@@ -14,6 +14,20 @@
 ## 2. Required rate range
 Table of $Q$ → required rate $R = 1 - f\,h(Q)$ (see the [learning guide §9](00-learning-guide.md#9-ldpc-codes-in-depth)). The rate spans about 0.48–0.91, which sets the mother-code rate $R_0$ and the puncture/shorten ranges.
 
+## 2a. Measured constraints from the L1 model (M2, results/c1_rate_adaptation)
+
+Before designing anything, the baseline random QC-LDPC code was swept with
+puncture/shorten masks across QBER 1-6%. The findings constrain this design:
+
+| Finding | Constraint it imposes |
+|---|---|
+| Puncturing works up to about **10% of positions**; 15% is marginal; 20% fails outright | Cap puncturing at 10%, and cover the high-rate end another way |
+| One R0 = 0.672 mother code could not reach the 1% QBER point at all | **Use two mother codes**: R0 about 0.85-0.88 for Q = 1-3%, R0 about 0.60-0.65 for Q = 4-10% |
+| Concentrating degree on punctured columns helped at a 10% budget (FER 0.96 -> 0.24 at 3%) but failed beyond it | Design a **puncturable subset that is larger than the punctured set**, so spares stay unpunctured |
+| Achieved f was 1.38-1.87 against the 1.15 target | The gap must come from degree-distribution optimisation (density evolution), PEG construction and the longer n = 65,536 |
+| Heavy-puncture candidates produced f < 1 under the `m - p` accounting | **Check the rank of the punctured columns** (spec section 3.5) for every mask, and fall back to the conservative `m` when it fails |
+
+
 ## 3. Baseline codes (for comparison only)
 - 5G NR BG1/BG2 at the largest lifting size.
 - IEEE 802.11n codes, for early RTL bring-up.
