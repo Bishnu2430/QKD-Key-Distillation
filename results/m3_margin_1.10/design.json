@@ -1,0 +1,312 @@
+{
+  "commit": "e293ad7",
+  "date": "2026-10-12",
+  "command": "scripts/design_codes3.py --margin 1.10 --out results/m3_margin_1.10 --validate-frames 40",
+  "profile": {
+    "3": 0.75,
+    "6": 0.125,
+    "8": 0.125
+  },
+  "margin": 1.1,
+  "max_sigma": 0.4,
+  "puncture_budget": 0.1,
+  "plan": [
+    {
+      "qber": 0.01,
+      "rate": 0.875,
+      "threshold": 0.01240433120727539,
+      "f_achievable": 1.5471611370679086
+    },
+    {
+      "qber": 0.02,
+      "rate": 0.8,
+      "threshold": 0.023313713073730473,
+      "f_achievable": 1.4140217253540626
+    },
+    {
+      "qber": 0.03,
+      "rate": 0.725,
+      "threshold": 0.03586128616333008,
+      "f_achievable": 1.4146683048744966
+    },
+    {
+      "qber": 0.04,
+      "rate": 0.675,
+      "threshold": 0.04505656433105469,
+      "f_achievable": 1.3413556633039143
+    },
+    {
+      "qber": 0.05,
+      "rate": 0.6,
+      "threshold": 0.060018154144287114,
+      "f_achievable": 1.3966628836704023
+    },
+    {
+      "qber": 0.06,
+      "rate": 0.55,
+      "threshold": 0.07070587158203126,
+      "f_achievable": 1.3742769353758297
+    },
+    {
+      "qber": 0.08,
+      "rate": 0.45,
+      "threshold": 0.09381514739990235,
+      "f_achievable": 1.3675496231502728
+    }
+  ],
+  "mother_rates": [
+    0.875,
+    0.725,
+    0.45
+  ],
+  "codes": [
+    {
+      "rate0": 0.875,
+      "base": [
+        64,
+        512
+      ],
+      "z": 128,
+      "n": 65536,
+      "edges_base": 2048,
+      "path": "codes/v3_mother_0_r875.npz"
+    },
+    {
+      "rate0": 0.724609375,
+      "base": [
+        141,
+        512
+      ],
+      "z": 128,
+      "n": 65536,
+      "edges_base": 2048,
+      "path": "codes/v3_mother_1_r725.npz"
+    },
+    {
+      "rate0": 0.44921875,
+      "base": [
+        282,
+        512
+      ],
+      "z": 128,
+      "n": 65536,
+      "edges_base": 2048,
+      "path": "codes/v3_mother_2_r450.npz"
+    }
+  ],
+  "masks": [
+    {
+      "qber": 0.01,
+      "code_rate0": 0.875,
+      "target_rate": 0.875,
+      "rate": 0.875,
+      "p": 0,
+      "s": 0,
+      "leak": 8256,
+      "rank_ok": true,
+      "f": 1.5592483334512517,
+      "n_key": 65536
+    },
+    {
+      "qber": 0.02,
+      "code_rate0": 0.875,
+      "target_rate": 0.8,
+      "rate": 0.8,
+      "p": 0,
+      "s": 24576,
+      "leak": 8256,
+      "rank_ok": true,
+      "f": 1.4250687700833915,
+      "n_key": 40960
+    },
+    {
+      "qber": 0.03,
+      "code_rate0": 0.725,
+      "target_rate": 0.725,
+      "rate": 0.724609375,
+      "p": 0,
+      "s": 0,
+      "leak": 18112,
+      "rank_ok": true,
+      "f": 1.4217014569583895,
+      "n_key": 65536
+    },
+    {
+      "qber": 0.04,
+      "code_rate0": 0.725,
+      "target_rate": 0.675,
+      "rate": 0.6751152073732719,
+      "p": 0,
+      "s": 9984,
+      "leak": 18112,
+      "rank_ok": true,
+      "f": 1.3456350681141716,
+      "n_key": 55552
+    },
+    {
+      "qber": 0.05,
+      "code_rate0": 0.725,
+      "target_rate": 0.6,
+      "rate": 0.5994318181818182,
+      "p": 0,
+      "s": 20480,
+      "leak": 18112,
+      "rank_ok": true,
+      "f": 1.4036065201659227,
+      "n_key": 45056
+    },
+    {
+      "qber": 0.06,
+      "code_rate0": 0.725,
+      "target_rate": 0.55,
+      "rate": 0.549520766773163,
+      "p": 0,
+      "s": 25472,
+      "leak": 18112,
+      "rank_ok": true,
+      "f": 1.3806190014602764,
+      "n_key": 40064
+    },
+    {
+      "qber": 0.08,
+      "code_rate0": 0.45,
+      "target_rate": 0.45,
+      "rate": 0.4500978473581213,
+      "p": 128,
+      "s": 0,
+      "leak": 36032,
+      "rank_ok": true,
+      "f": 1.3697392596221376,
+      "n_key": 65408
+    }
+  ],
+  "validation": [
+    {
+      "qber": 0.08,
+      "mask_id": 6,
+      "n": 65536,
+      "n_key": 65408,
+      "rate": 0.4500978473581213,
+      "p": 128,
+      "s": 0,
+      "frames": 40,
+      "fer": 0.0,
+      "efficiency": 1.3697392596221376,
+      "leak_bits": 36032,
+      "avg_iters_ok": 8.125,
+      "max_iters_ok": 9,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "r0.450"
+    },
+    {
+      "qber": 0.03,
+      "mask_id": 2,
+      "n": 65536,
+      "n_key": 65536,
+      "rate": 0.724609375,
+      "p": 0,
+      "s": 0,
+      "frames": 40,
+      "fer": 0.0,
+      "efficiency": 1.4217014569583895,
+      "leak_bits": 18112,
+      "avg_iters_ok": 8.525,
+      "max_iters_ok": 11,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "r0.725"
+    },
+    {
+      "qber": 0.04,
+      "mask_id": 3,
+      "n": 65536,
+      "n_key": 55552,
+      "rate": 0.6751152073732719,
+      "p": 0,
+      "s": 9984,
+      "frames": 40,
+      "fer": 0.0,
+      "efficiency": 1.3456350681141716,
+      "leak_bits": 18112,
+      "avg_iters_ok": 10.725,
+      "max_iters_ok": 16,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "r0.725"
+    },
+    {
+      "qber": 0.05,
+      "mask_id": 4,
+      "n": 65536,
+      "n_key": 45056,
+      "rate": 0.5994318181818182,
+      "p": 0,
+      "s": 20480,
+      "frames": 40,
+      "fer": 0.0,
+      "efficiency": 1.4036065201659227,
+      "leak_bits": 18112,
+      "avg_iters_ok": 8.15,
+      "max_iters_ok": 10,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "r0.725"
+    },
+    {
+      "qber": 0.06,
+      "mask_id": 5,
+      "n": 65536,
+      "n_key": 40064,
+      "rate": 0.549520766773163,
+      "p": 0,
+      "s": 25472,
+      "frames": 40,
+      "fer": 0.0,
+      "efficiency": 1.3806190014602764,
+      "leak_bits": 18112,
+      "avg_iters_ok": 8.55,
+      "max_iters_ok": 10,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "r0.725"
+    },
+    {
+      "qber": 0.01,
+      "mask_id": 0,
+      "n": 65536,
+      "n_key": 65536,
+      "rate": 0.875,
+      "p": 0,
+      "s": 0,
+      "frames": 40,
+      "fer": 0.0,
+      "efficiency": 1.5592483334512517,
+      "leak_bits": 8256,
+      "avg_iters_ok": 7.975,
+      "max_iters_ok": 11,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "r0.875"
+    },
+    {
+      "qber": 0.02,
+      "mask_id": 1,
+      "n": 65536,
+      "n_key": 40960,
+      "rate": 0.8,
+      "p": 0,
+      "s": 24576,
+      "frames": 40,
+      "fer": 0.0,
+      "efficiency": 1.4250687700833915,
+      "leak_bits": 8256,
+      "avg_iters_ok": 10.5,
+      "max_iters_ok": 15,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "r0.875"
+    }
+  ],
+  "runtime_s": 57.4
+}

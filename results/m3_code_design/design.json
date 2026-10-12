@@ -1,0 +1,527 @@
+{
+  "commit": "0a2da58",
+  "date": "2026-10-12",
+  "command": "scripts/design_codes.py --nb 512 --z 128 --de-iters 150 --validate-frames 40 --max-iters 60",
+  "codes": {
+    "high": {
+      "target_rate": 0.87,
+      "rate0": 0.869140625,
+      "base": [
+        67,
+        512
+      ],
+      "z": 128,
+      "n": 65536,
+      "profile": {
+        "8": 0.125,
+        "6": 0.125,
+        "3": 0.75
+      },
+      "avg_degree": 4.0,
+      "de_threshold": 0.013073120117187502,
+      "shannon": 0.017989801480026792,
+      "edges_base": 2048,
+      "path": "codes/mother_high.npz",
+      "ranked": [
+        {
+          "profile": {
+            "8": 0.125,
+            "6": 0.125,
+            "3": 0.75
+          },
+          "threshold": 0.013073120117187502
+        },
+        {
+          "profile": {
+            "6": 0.3,
+            "3": 0.7
+          },
+          "threshold": 0.012714054107666017
+        },
+        {
+          "profile": {
+            "6": 0.25,
+            "3": 0.75
+          },
+          "threshold": 0.012532623291015628
+        },
+        {
+          "profile": {
+            "8": 0.15,
+            "3": 0.85
+          },
+          "threshold": 0.012474170684814455
+        },
+        {
+          "profile": {
+            "6": 0.2,
+            "3": 0.8
+          },
+          "threshold": 0.012234287261962894
+        },
+        {
+          "profile": {
+            "8": 0.075,
+            "6": 0.075,
+            "3": 0.85
+          },
+          "threshold": 0.012150783538818362
+        },
+        {
+          "profile": {
+            "6": 0.15,
+            "3": 0.85
+          },
+          "threshold": 0.011841819763183593
+        },
+        {
+          "profile": {
+            "4": 1.0
+          },
+          "threshold": 0.011650520324707033
+        },
+        {
+          "profile": {
+            "3": 1.0
+          },
+          "threshold": 0.01043667984008789
+        },
+        {
+          "profile": {
+            "6": 0.3,
+            "3": 0.5499999999999999,
+            "2": 0.15
+          },
+          "threshold": 0.002369461059570312
+        },
+        {
+          "profile": {
+            "6": 0.25,
+            "3": 0.6,
+            "2": 0.15
+          },
+          "threshold": 0.002341373443603516
+        },
+        {
+          "profile": {
+            "6": 0.2,
+            "3": 0.65,
+            "2": 0.15
+          },
+          "threshold": 0.0023132858276367187
+        },
+        {
+          "profile": {
+            "6": 0.15,
+            "3": 0.7,
+            "2": 0.15
+          },
+          "threshold": 0.0022889938354492185
+        },
+        {
+          "profile": {
+            "6": 0.15,
+            "2": 0.85
+          },
+          "threshold": 0.0
+        },
+        {
+          "profile": {
+            "6": 0.2,
+            "2": 0.8
+          },
+          "threshold": 0.0
+        },
+        {
+          "profile": {
+            "6": 0.25,
+            "2": 0.75
+          },
+          "threshold": 0.0
+        },
+        {
+          "profile": {
+            "6": 0.3,
+            "2": 0.7
+          },
+          "threshold": 0.0
+        }
+      ],
+      "masks": [
+        {
+          "qber": 0.01,
+          "mask": null,
+          "rate": 0.9063136456211812,
+          "p": 2688,
+          "s": 0,
+          "leak": 5952,
+          "rank_ok": true,
+          "f_predicted": 1.1721872565972749
+        },
+        {
+          "qber": 0.02,
+          "mask": null,
+          "rate": 0.837378640776699,
+          "p": 0,
+          "s": 12800,
+          "leak": 8640,
+          "rank_ok": true,
+          "f_predicted": 1.1583309036577578
+        },
+        {
+          "qber": 0.03,
+          "mask": null,
+          "rate": 0.7766666666666666,
+          "p": 0,
+          "s": 27136,
+          "leak": 8640,
+          "rank_ok": true,
+          "f_predicted": 1.1574558858064061
+        }
+      ]
+    },
+    "low": {
+      "target_rate": 0.62,
+      "rate0": 0.619140625,
+      "base": [
+        195,
+        512
+      ],
+      "z": 128,
+      "n": 65536,
+      "profile": {
+        "8": 0.15,
+        "3": 0.85
+      },
+      "avg_degree": 3.75,
+      "de_threshold": 0.05743637084960938,
+      "shannon": 0.07381449295552606,
+      "edges_base": 1921,
+      "path": "codes/mother_low.npz",
+      "ranked": [
+        {
+          "profile": {
+            "8": 0.15,
+            "3": 0.85
+          },
+          "threshold": 0.05743637084960938
+        },
+        {
+          "profile": {
+            "8": 0.075,
+            "6": 0.075,
+            "3": 0.85
+          },
+          "threshold": 0.05649429702758789
+        },
+        {
+          "profile": {
+            "8": 0.125,
+            "6": 0.125,
+            "3": 0.75
+          },
+          "threshold": 0.0558794059753418
+        },
+        {
+          "profile": {
+            "6": 0.2,
+            "3": 0.8
+          },
+          "threshold": 0.05559397506713866
+        },
+        {
+          "profile": {
+            "6": 0.15,
+            "3": 0.85
+          },
+          "threshold": 0.05549908447265625
+        },
+        {
+          "profile": {
+            "6": 0.25,
+            "3": 0.75
+          },
+          "threshold": 0.055321449279785155
+        },
+        {
+          "profile": {
+            "6": 0.3,
+            "3": 0.7
+          },
+          "threshold": 0.054645069122314455
+        },
+        {
+          "profile": {
+            "3": 1.0
+          },
+          "threshold": 0.052561271667480466
+        },
+        {
+          "profile": {
+            "4": 1.0
+          },
+          "threshold": 0.05009943008422851
+        },
+        {
+          "profile": {
+            "6": 0.3,
+            "3": 0.5499999999999999,
+            "2": 0.15
+          },
+          "threshold": 0.026016956329345704
+        },
+        {
+          "profile": {
+            "6": 0.25,
+            "3": 0.6,
+            "2": 0.15
+          },
+          "threshold": 0.025543262481689456
+        },
+        {
+          "profile": {
+            "6": 0.2,
+            "3": 0.65,
+            "2": 0.15
+          },
+          "threshold": 0.025357276916503906
+        },
+        {
+          "profile": {
+            "6": 0.15,
+            "3": 0.7,
+            "2": 0.15
+          },
+          "threshold": 0.02492002105712891
+        },
+        {
+          "profile": {
+            "6": 0.15,
+            "2": 0.85
+          },
+          "threshold": 0.0
+        },
+        {
+          "profile": {
+            "6": 0.2,
+            "2": 0.8
+          },
+          "threshold": 0.0
+        },
+        {
+          "profile": {
+            "6": 0.25,
+            "2": 0.75
+          },
+          "threshold": 0.0
+        },
+        {
+          "profile": {
+            "6": 0.3,
+            "2": 0.7
+          },
+          "threshold": 0.0
+        }
+      ],
+      "masks": [
+        {
+          "qber": 0.04,
+          "mask": null,
+          "rate": 0.6876355748373102,
+          "p": 6528,
+          "s": 0,
+          "leak": 18496,
+          "rank_ok": true,
+          "f_predicted": 1.2936819178869725
+        },
+        {
+          "qber": 0.05,
+          "mask": null,
+          "rate": 0.6701902748414377,
+          "p": 4992,
+          "s": 0,
+          "leak": 20032,
+          "rank_ok": true,
+          "f_predicted": 1.1552734740719766
+        },
+        {
+          "qber": 0.06,
+          "mask": null,
+          "rate": 0.6240157480314961,
+          "p": 512,
+          "s": 0,
+          "leak": 24512,
+          "rank_ok": true,
+          "f_predicted": 1.1512424896083613
+        },
+        {
+          "qber": 0.08,
+          "mask": null,
+          "rate": 0.5379146919431279,
+          "p": 0,
+          "s": 11520,
+          "leak": 25024,
+          "rank_ok": true,
+          "f_predicted": 1.1518998333730217
+        },
+        {
+          "qber": 0.1,
+          "mask": null,
+          "rate": 0.4613259668508287,
+          "p": 0,
+          "s": 19200,
+          "leak": 25024,
+          "rank_ok": true,
+          "f_predicted": 1.1515145472597619
+        }
+      ]
+    }
+  },
+  "validation": [
+    {
+      "qber": 0.01,
+      "mask_id": 0,
+      "n": 65536,
+      "n_key": 62848,
+      "rate": 0.9063136456211812,
+      "p": 2688,
+      "s": 0,
+      "frames": 40,
+      "fer": 1.0,
+      "efficiency": 1.1721872565972749,
+      "leak_bits": 5952,
+      "avg_iters_ok": NaN,
+      "max_iters_ok": 0,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "high"
+    },
+    {
+      "qber": 0.02,
+      "mask_id": 1,
+      "n": 65536,
+      "n_key": 52736,
+      "rate": 0.837378640776699,
+      "p": 0,
+      "s": 12800,
+      "frames": 40,
+      "fer": 1.0,
+      "efficiency": 1.1583309036577578,
+      "leak_bits": 8640,
+      "avg_iters_ok": NaN,
+      "max_iters_ok": 0,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "high"
+    },
+    {
+      "qber": 0.03,
+      "mask_id": 2,
+      "n": 65536,
+      "n_key": 38400,
+      "rate": 0.7766666666666666,
+      "p": 0,
+      "s": 27136,
+      "frames": 40,
+      "fer": 1.0,
+      "efficiency": 1.1574558858064061,
+      "leak_bits": 8640,
+      "avg_iters_ok": NaN,
+      "max_iters_ok": 0,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "high"
+    },
+    {
+      "qber": 0.04,
+      "mask_id": 0,
+      "n": 65536,
+      "n_key": 59008,
+      "rate": 0.6876355748373102,
+      "p": 6528,
+      "s": 0,
+      "frames": 40,
+      "fer": 0.5,
+      "efficiency": 1.2936819178869725,
+      "leak_bits": 18496,
+      "avg_iters_ok": 30.35,
+      "max_iters_ok": 50,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "low"
+    },
+    {
+      "qber": 0.05,
+      "mask_id": 1,
+      "n": 65536,
+      "n_key": 60544,
+      "rate": 0.6701902748414377,
+      "p": 4992,
+      "s": 0,
+      "frames": 40,
+      "fer": 1.0,
+      "efficiency": 1.1552734740719766,
+      "leak_bits": 20032,
+      "avg_iters_ok": NaN,
+      "max_iters_ok": 0,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "low"
+    },
+    {
+      "qber": 0.06,
+      "mask_id": 2,
+      "n": 65536,
+      "n_key": 65024,
+      "rate": 0.6240157480314961,
+      "p": 512,
+      "s": 0,
+      "frames": 40,
+      "fer": 1.0,
+      "efficiency": 1.1512424896083613,
+      "leak_bits": 24512,
+      "avg_iters_ok": NaN,
+      "max_iters_ok": 0,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "low"
+    },
+    {
+      "qber": 0.08,
+      "mask_id": 3,
+      "n": 65536,
+      "n_key": 54016,
+      "rate": 0.5379146919431279,
+      "p": 0,
+      "s": 11520,
+      "frames": 40,
+      "fer": 1.0,
+      "efficiency": 1.1518998333730217,
+      "leak_bits": 25024,
+      "avg_iters_ok": NaN,
+      "max_iters_ok": 0,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "low"
+    },
+    {
+      "qber": 0.1,
+      "mask_id": 4,
+      "n": 65536,
+      "n_key": 46336,
+      "rate": 0.4613259668508287,
+      "p": 0,
+      "s": 19200,
+      "frames": 40,
+      "fer": 1.0,
+      "efficiency": 1.1515145472597619,
+      "leak_bits": 25024,
+      "avg_iters_ok": NaN,
+      "max_iters_ok": 0,
+      "undetected": 0,
+      "leak_below_limit": false,
+      "code": "low"
+    }
+  ],
+  "runtime_s": 743.7
+}

@@ -28,6 +28,57 @@ puncture/shorten masks across QBER 1-6%. The findings constrain this design:
 | Heavy-puncture candidates produced f < 1 under the `m - p` accounting | **Check the rank of the punctured columns** (spec section 3.5) for every mask, and fall back to the conservative `m` when it fails |
 
 
+## 2b. Efficiency is an outcome, not an input (M3 first pass)
+
+The first M3 attempt (results/m3_code_design) built masks to hit f = 1.15 at
+each QBER and **every operating point failed to decode**. Asking for f = 1.15
+at QBER Q fixes the effective rate at R = 1 - 1.15 h(Q); for these ensembles
+the decoding threshold at that rate is *below* Q, so the decoder cannot work
+there no matter how the mask is built.
+
+The design loop therefore runs the other way:
+
+1. Compute the density-evolution threshold as a function of rate for the chosen
+   degree profile.
+2. For each QBER, take the highest rate whose threshold still exceeds Q with a
+   finite-length margin.
+3. The achievable efficiency follows as f = (1 - R) / h(Q).
+
+The best f any ensemble can reach is set by the gap between its threshold and
+the Shannon limit. For the profile {3: 0.75, 6: 0.125, 8: 0.125} at R0 = 0.619
+the threshold is 5.74% against a Shannon limit of 7.38%, which caps f at about
+1.20 **at threshold** - and real operation needs margin below threshold, so
+f = 1.25-1.35 is the realistic target for this ensemble at n = 65,536.
+
+That is above the REQ-PERF-01 target of f <= 1.15, so one of three things has
+to give: a better degree profile, a longer code, or the requirement.
+
+
+## 2c. The design rule (M3, from results/m3_code_design_v3)
+
+    A mother code sits at the TOP of the rate range it serves.
+    Lower rates are reached by SHORTENING, which measurement shows is safe.
+    PUNCTURING is used only within the 10% budget, to nudge above R0.
+
+Three mother codes at n = 65,536 (base 512 columns, Z = 128), profile
+{3: 0.75, 6: 0.125, 8: 0.125}:
+
+| Code | R0 | base | serves | measured FER |
+|---|---|---|---|---|
+| v3_mother_0_r850 | 0.850 | 77 x 512 | Q = 1-2% | 0.00 |
+| v3_mother_1_r700 | 0.700 | 154 x 512 | Q = 3-6% | 0.00 |
+| v3_mother_2_r400 | 0.400 | 307 x 512 | Q = 8% | 0.00 |
+
+Every punctured column set passes the GF(2) rank check, so `leak = m - p`
+is licensed rather than assumed.
+
+**Efficiency reached: f = 1.29-1.56 (margin 1.05) against a target of 1.15.**
+The ensemble's threshold gap caps f at about 1.22 before any finite-length
+margin, so closing the gap needs a numerically optimised degree distribution -
+this pass searched only 12 hand-written profiles. That optimisation is the
+next task for this document.
+
+
 ## 3. Baseline codes (for comparison only)
 - 5G NR BG1/BG2 at the largest lifting size.
 - IEEE 802.11n codes, for early RTL bring-up.
