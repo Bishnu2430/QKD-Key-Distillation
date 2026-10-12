@@ -1,0 +1,70 @@
+{
+  "commit": "7ecae49",
+  "date": "2026-10-12",
+  "frames": 20,
+  "max_iters": 30,
+  "qber": 0.03,
+  "rows": [
+    {
+      "n": 4096,
+      "qber": 0.03,
+      "frames": 20,
+      "ref_float_s": 0.324,
+      "ref_fixed_s": 0.417,
+      "fast_float_s": 0.072,
+      "fast_fixed_s": 0.037,
+      "speedup_float": 4.5,
+      "speedup_fixed": 11.3,
+      "fast_fixed_frames_per_s": 544.0,
+      "hours_for_1e5_frames": 0.05,
+      "label": "n=4096",
+      "code_build_s": 0.0
+    },
+    {
+      "n": 8192,
+      "qber": 0.03,
+      "frames": 20,
+      "ref_float_s": 0.701,
+      "ref_fixed_s": 1.058,
+      "fast_float_s": 0.073,
+      "fast_fixed_s": 0.049,
+      "speedup_float": 9.7,
+      "speedup_fixed": 21.5,
+      "fast_fixed_frames_per_s": 406.4,
+      "hours_for_1e5_frames": 0.07,
+      "label": "n=8192",
+      "code_build_s": 0.1
+    },
+    {
+      "n": 16384,
+      "qber": 0.03,
+      "frames": 20,
+      "ref_float_s": 0.853,
+      "ref_fixed_s": 1.01,
+      "fast_float_s": 0.163,
+      "fast_fixed_s": 0.14,
+      "speedup_float": 5.2,
+      "speedup_fixed": 7.2,
+      "fast_fixed_frames_per_s": 142.9,
+      "hours_for_1e5_frames": 0.19,
+      "label": "n=16384",
+      "code_build_s": 0.1
+    },
+    {
+      "n": 65536,
+      "qber": 0.03,
+      "frames": 20,
+      "ref_float_s": 2.207,
+      "ref_fixed_s": 2.781,
+      "fast_float_s": 0.8,
+      "fast_fixed_s": 0.538,
+      "speedup_float": 2.8,
+      "speedup_fixed": 5.2,
+      "fast_fixed_frames_per_s": 37.2,
+      "hours_for_1e5_frames": 0.75,
+      "label": "n=65536",
+      "code_build_s": 0.2
+    }
+  ],
+  "command": "scripts/bench_decoder.py --frames 20 --max-iters 30"
+}

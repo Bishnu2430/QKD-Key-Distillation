@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from . import fixed, hashing
+from . import fast, fixed, hashing
 from .code import RateMask
 from .decoder import decode
 from .frame import make_frame
@@ -78,11 +78,14 @@ def process_frame(
     algorithm: str = "nms",
     backend: str = "float",
     cfg: fixed.FixedConfig = fixed.DEFAULT,
+    accelerate: bool = True,
 ) -> FrameOutcome:
     """Reconcile and verify one frame (spec sections 3 and 4).
 
     ``backend`` selects the model level: ``"float"`` is L1, ``"fixed"`` is the
-    bit-true L2 model that the RTL is checked against.
+    bit-true L2 model that the RTL is checked against. ``accelerate`` routes to
+    the Numba kernels in :mod:`model.fast`, which are tested to be exactly
+    equivalent to the reference implementations.
     """
     frame = make_frame(mask, qber, rng, qber_est=qber_est)
     key_pos, _, _ = mask.positions()
@@ -91,18 +94,25 @@ def process_frame(
         llr_fixed = fixed.initial_llr(
             mask, frame.y_key, qber if qber_est is None else qber_est, cfg
         )
-        res = fixed.decode(
+        decode_fixed = fast.decode_fixed if accelerate else fixed.decode
+        res = decode_fixed(
             mask.code, llr_fixed, frame.syndrome, max_iters=max_iters, cfg=cfg
         )
     elif backend == "float":
-        res = decode(
-            mask.code,
-            frame.llr,
-            frame.syndrome,
-            max_iters=max_iters,
-            alpha=alpha,
-            algorithm=algorithm,
-        )
+        if accelerate and algorithm == "nms":
+            res = fast.decode_float(
+                mask.code, frame.llr, frame.syndrome,
+                max_iters=max_iters, alpha=alpha,
+            )
+        else:
+            res = decode(
+                mask.code,
+                frame.llr,
+                frame.syndrome,
+                max_iters=max_iters,
+                alpha=alpha,
+                algorithm=algorithm,
+            )
     else:
         raise ValueError("backend must be 'float' or 'fixed'")
     x_hat_key = res.key_bits(key_pos)
