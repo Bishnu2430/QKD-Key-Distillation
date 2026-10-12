@@ -1,0 +1,16 @@
+{
+  "experiment": "E5 secret key rate vs distance",
+  "commit": "0a2da58",
+  "date": "2026-10-12",
+  "channel": {
+    "attenuation_db_km": 0.2,
+    "detector_efficiency": 0.2,
+    "dark_count_rate": 1e-06,
+    "misalignment": 0.01,
+    "rep_rate_hz": 1000000000.0,
+    "sift_factor": 0.5
+  },
+  "parameters_are_illustrative": true,
+  "finite_key_provisional": true,
+  "command": "scripts/sweep_e5.py"
+}
