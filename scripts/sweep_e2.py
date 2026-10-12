@@ -24,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from model import code as qc  # noqa: E402
-from model import fixed, pipeline  # noqa: E402
+from model import fixed, sweeps  # noqa: E402
 
 
 def git_commit() -> str:
@@ -64,6 +64,7 @@ def main() -> None:
     ap.add_argument("--max-iters", type=int, default=60)
     ap.add_argument("--qber", type=float, nargs="+", default=[0.02, 0.03, 0.04])
     ap.add_argument("--seed", type=int, default=2026)
+    ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--out", type=Path, default=Path("results/e2_quantisation"))
     args = ap.parse_args()
 
@@ -75,10 +76,14 @@ def main() -> None:
     t0 = time.time()
 
     # floating-point reference first
+    float_points = [
+        sweeps.Point(mask, q, args.frames, seed=args.seed, label="float",
+                     kwargs={"max_iters": args.max_iters, "backend": "float"})
+        for q in args.qber
+    ]
     float_ref: dict[float, dict] = {}
-    for q in args.qber:
-        st = pipeline.measure(mask, q, args.frames, seed=args.seed,
-                              max_iters=args.max_iters, backend="float")
+    for st in sweeps.run_points(float_points, workers=args.workers):
+        q = st["qber"]
         float_ref[q] = st
         rows.append({"config": "float reference", "qber": q, "fer": st["fer"],
                      "avg_iters": st["avg_iters_ok"], "delta_fer": 0.0,
@@ -87,20 +92,26 @@ def main() -> None:
         print(f"float  Q={q*100:4.1f}%  FER={st['fer']:5.2f}  iters={st['avg_iters_ok']:5.1f}")
     print()
 
-    for name, cfg in configurations():
-        for q in args.qber:
-            st = pipeline.measure(mask, q, args.frames, seed=args.seed,
-                                  max_iters=args.max_iters, backend="fixed", cfg=cfg)
-            rows.append({"config": name, "qber": q, "fer": st["fer"],
-                         "avg_iters": st["avg_iters_ok"],
-                         "delta_fer": st["fer"] - float_ref[q]["fer"],
-                         "undetected": st["undetected"],
-                         "w_ch": cfg.w_ch, "w_msg": cfg.w_msg, "w_app": cfg.w_app,
-                         "delta_q": cfg.delta, "alpha": cfg.alpha})
-            print(f"{name:28s} Q={q*100:4.1f}%  FER={st['fer']:5.2f} "
-                  f"({st['fer'] - float_ref[q]['fer']:+.2f} vs float)  "
-                  f"iters={st['avg_iters_ok']:5.1f}")
-        print()
+    configs = configurations()
+    by_name = dict(configs)
+    cfg_points = [
+        sweeps.Point(mask, q, args.frames, seed=args.seed, label=name,
+                     kwargs={"max_iters": args.max_iters, "backend": "fixed", "cfg": cfg})
+        for name, cfg in configs for q in args.qber
+    ]
+    for st in sweeps.run_points(cfg_points, workers=args.workers):
+        name, q = st["label"], st["qber"]
+        cfg = by_name[name]
+        rows.append({"config": name, "qber": q, "fer": st["fer"],
+                     "avg_iters": st["avg_iters_ok"],
+                     "delta_fer": st["fer"] - float_ref[q]["fer"],
+                     "undetected": st["undetected"],
+                     "w_ch": cfg.w_ch, "w_msg": cfg.w_msg, "w_app": cfg.w_app,
+                     "delta_q": cfg.delta, "alpha": cfg.alpha})
+        print(f"{name:28s} Q={q*100:4.1f}%  FER={st['fer']:5.2f} "
+              f"({st['fer'] - float_ref[q]['fer']:+.2f} vs float)  "
+              f"iters={st['avg_iters_ok']:5.1f}")
+    print()
 
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "meta.json").write_text(json.dumps({

@@ -25,7 +25,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from model import code as qc  # noqa: E402
-from model import info, pipeline  # noqa: E402
+from model import info, sweeps  # noqa: E402
 
 
 def git_commit() -> str:
@@ -60,6 +60,8 @@ def main() -> None:
     ap.add_argument("--puncture", type=int, nargs="+", default=[0],
                     help="number of punctured base columns, one mask per value")
     ap.add_argument("--seed", type=int, default=2026)
+    ap.add_argument("--workers", type=int, default=None,
+                    help="parallel worker processes (default: cores - 1)")
     ap.add_argument("--out", type=Path, default=Path("results/e1_l1"))
     args = ap.parse_args()
 
@@ -70,21 +72,22 @@ def main() -> None:
     print(f"code: n={mother.n} m={mother.m} R0={mother.rate0:.3f} "
           f"edges={mother.n_edges_base} (Z={mother.z}, base {mother.m_b}x{mother.n_b})")
 
-    rows = []
     t0 = time.time()
-    for mask in masks:
-        for q in args.qber:
-            t = time.time()
-            stats = pipeline.measure(
-                mask, q, args.frames, seed=args.seed + mask.mask_id * 1000,
-                max_iters=args.max_iters, alpha=args.alpha,
-            )
-            stats["seconds"] = round(time.time() - t, 2)
-            stats["shannon_rate"] = info.required_rate(q, 1.0)
-            rows.append(stats)
-            print(f"  mask {mask.mask_id} R={mask.rate:.3f}  Q={q:5.3f}  "
-                  f"FER={stats['fer']:.3f}  f={stats['efficiency']:.3f}  "
-                  f"iters={stats['avg_iters_ok']:.1f}  ({stats['seconds']}s)")
+    points = [
+        sweeps.Point(mask, q, args.frames, seed=args.seed + mask.mask_id * 1000,
+                     label=f"mask{mask.mask_id}",
+                     kwargs={"max_iters": args.max_iters, "alpha": args.alpha})
+        for mask in masks for q in args.qber
+    ]
+
+    def report(stats: dict) -> None:
+        print(f"  mask {stats['mask_id']} R={stats['rate']:.3f}  Q={stats['qber']:5.3f}  "
+              f"FER={stats['fer']:.3f}  f={stats['efficiency']:.3f}  "
+              f"iters={stats['avg_iters_ok']:.1f}")
+
+    rows = sweeps.run_points(points, workers=args.workers, on_result=report)
+    for stats in rows:
+        stats["shannon_rate"] = info.required_rate(stats["qber"], 1.0)
 
     args.out.mkdir(parents=True, exist_ok=True)
     header = {

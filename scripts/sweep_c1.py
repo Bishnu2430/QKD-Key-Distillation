@@ -25,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from model import code as qc  # noqa: E402
-from model import info, pipeline  # noqa: E402
+from model import info, sweeps  # noqa: E402
 
 
 def git_commit() -> str:
@@ -52,6 +52,7 @@ def main() -> None:
     ap.add_argument("--fer-target", type=float, default=0.10,
                     help="maximum acceptable FER at this sample size")
     ap.add_argument("--seed", type=int, default=2026)
+    ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--out", type=Path, default=Path("results/c1_rate_adaptation"))
     args = ap.parse_args()
 
@@ -64,23 +65,35 @@ def main() -> None:
     selected: list[dict] = []
     t0 = time.time()
 
+    points = []
+    meta: dict[tuple[float, float], dict] = {}
     for q in args.qber:
-        print(f"QBER {q*100:4.1f}%  (Shannon rate {info.required_rate(q, 1.0):.3f})")
-        chosen = None
         for i, f_target in enumerate(args.f_ladder):
             target_rate = info.required_rate(q, f_target)
             if not 0.02 < target_rate < 0.98:
                 continue
             mask = qc.mask_for_rate(mother, target_rate, mask_id=i)
-            stats = pipeline.measure(mask, q, args.frames,
-                                     seed=args.seed + i * 977 + int(q * 10000),
-                                     max_iters=args.max_iters, alpha=args.alpha)
-            stats.update({"f_target": f_target, "target_rate": target_rate,
-                          "p": mask.p, "s": mask.s, "selected": False})
-            rows.append(stats)
+            meta[(q, f_target)] = {"f_target": f_target, "target_rate": target_rate,
+                                   "p": mask.p, "s": mask.s}
+            points.append(sweeps.Point(
+                mask, q, args.frames, seed=args.seed + i * 977 + int(q * 10000),
+                label=f"f{f_target}",
+                kwargs={"max_iters": args.max_iters, "alpha": args.alpha}))
+
+    for st in sweeps.run_points(points, workers=args.workers):
+        f_target = float(st["label"][1:])
+        st.update(meta[(st["qber"], f_target)])
+        st["selected"] = False
+        rows.append(st)
+
+    for q in args.qber:
+        print(f"QBER {q*100:4.1f}%  (Shannon rate {info.required_rate(q, 1.0):.3f})")
+        here = sorted([r for r in rows if r["qber"] == q], key=lambda r: r["f_target"])
+        chosen = None
+        for stats in here:
             flag = "ok " if stats["fer"] <= args.fer_target else "   "
-            print(f"   {flag}f_target={f_target:4.2f}  R={mask.rate:.3f} "
-                  f"(p={mask.p:5d} s={mask.s:5d})  FER={stats['fer']:5.2f}  "
+            print(f"   {flag}f_target={stats['f_target']:4.2f}  R={stats['rate']:.3f} "
+                  f"(p={stats['p']:5d} s={stats['s']:5d})  FER={stats['fer']:5.2f}  "
                   f"f={stats['efficiency']:5.3f}  iters={stats['avg_iters_ok']:5.1f}")
             if chosen is None and stats["fer"] <= args.fer_target:
                 chosen = stats
