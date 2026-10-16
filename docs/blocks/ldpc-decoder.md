@@ -5,7 +5,7 @@
 | Milestone | M4 |
 | Implements | [05-algorithm-spec §3.3–3.6](../05-algorithm-spec.md#3-reconciliation) |
 | Oracle | `model/fixed.py` (L2), accelerated by `model/fast.py` — bit-exact |
-| Build procedure | [16-vivado-decoder-guide](../16-vivado-decoder-guide.md) |
+| Build procedure | [stages/00-overview](../stages/00-overview.md) and the per-stage documents |
 
 ---
 

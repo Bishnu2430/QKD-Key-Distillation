@@ -1,105 +1,115 @@
 # 06 — LDPC Code Design (Contribution C1)
 
-| Version | 0.0 (outline), 21 Sep 2026 |
+| Version | 1.0, 16 Oct 2026 |
 |---|---|
-| Owner milestone | M3 |
+| Status | Codes built and validated; efficiency target not met (§7) |
+| Codes | `codes/v3_mother_{0,1,2}_*.npz`, generated into `rtl/gen/` |
+| Evidence | [results/m3_code_design_v3](../results/m3_code_design_v3/README.md), [results/c1_rate_adaptation](../results/c1_rate_adaptation/README.md) |
 | Implements | [05 §3.1, §3.3](05-algorithm-spec.md#3-reconciliation) |
 
-> **Outline.** Section headings and the decisions each section must record are fixed. Content arrives in M3.
+---
 
-## 1. Design targets (from [03](03-requirements.md))
-- $n = 65{,}536$; QBER 1–10%; $f \le 1.15$ (stretch 1.10) at FER ≤ 10⁻² over $Q \in [2\%, 8\%]$.
-- Hardware constraints: single-circulant base entries ([05 §3.1](05-algorithm-spec.md#31-code-representation-qc-ldpc)); lifting $Z$ matches decoder parallelism (working assumption $Z = 128$, $n_b = 512$).
+## 1. Targets
 
-## 2. Required rate range
-Table of $Q$ → required rate $R = 1 - f\,h(Q)$ (see the [learning guide §9](00-learning-guide.md#9-ldpc-codes-in-depth)). The rate spans about 0.48–0.91, which sets the mother-code rate $R_0$ and the puncture/shorten ranges.
+| Quantity | Target | Source |
+|---|---|---|
+| Frame length | n = 65,536 | REQ-FUN-09, BRAM budget ([07](07-hw-architecture.md)) |
+| QBER range | 1–10% | REQ-FUN-02 |
+| Efficiency | f ≤ 1.15 at FER ≤ 10⁻² over 2–8% | REQ-PERF-01 |
+| Structure | One circulant per base entry, lifting Z matched to decoder parallelism (Z = 128, n_b = 512) | [05 §3.1](05-algorithm-spec.md#31-code-representation-qc-ldpc) |
 
-## 2a. Measured constraints from the L1 model (M2, results/c1_rate_adaptation)
+The required code rate spans **0.48 to 0.91** across the QBER range, which is what forces rate adaptation.
 
-Before designing anything, the baseline random QC-LDPC code was swept with
-puncture/shorten masks across QBER 1-6%. The findings constrain this design:
+## 2. The two rules that came out of measurement
 
-| Finding | Constraint it imposes |
+**Rule 1 — puncture at most 10% of positions.** Measured on the baseline code ([C1](../results/c1_rate_adaptation/README.md)):
+
+| Puncture fraction | Outcome |
 |---|---|
-| Puncturing works up to about **10% of positions**; 15% is marginal; 20% fails outright | Cap puncturing at 10%, and cover the high-rate end another way |
-| One R0 = 0.672 mother code could not reach the 1% QBER point at all | **Use two mother codes**: R0 about 0.85-0.88 for Q = 1-3%, R0 about 0.60-0.65 for Q = 4-10% |
-| Concentrating degree on punctured columns helped at a 10% budget (FER 0.96 -> 0.24 at 3%) but failed beyond it | Design a **puncturable subset that is larger than the punctured set**, so spares stay unpunctured |
-| Achieved f was 1.38-1.87 against the 1.15 target | The gap must come from degree-distribution optimisation (density evolution), PEG construction and the longer n = 65,536 |
-| Heavy-puncture candidates produced f < 1 under the `m - p` accounting | **Check the rank of the punctured columns** (spec section 3.5) for every mask, and fall back to the conservative `m` when it fails |
+| ≤ 10% | decodes reliably |
+| 15% | marginal, FER 0.48–0.68 |
+| ≥ 20% | fails completely |
 
+A punctured variable arrives with zero channel information and must be rebuilt from its neighbours; past a tenth of the positions this construction cannot. Concentrating degree on the punctured columns helps *inside* that budget (FER 0.96 → 0.24 at 3%) and backfires beyond it, so the **puncturable subset must be larger than the punctured set**.
 
-## 2b. Efficiency is an outcome, not an input (M3 first pass)
+**Rule 2 — a mother code sits at the top of the range it serves.** Lower rates are reached by shortening, which measurement shows is safe to σ ≈ 0.4; puncturing is used only to nudge above R₀, inside the budget. Design pass v2 placed a mother code at the *bottom* of its range and every other point needed 24–30% puncturing; all of them failed.
 
-The first M3 attempt (results/m3_code_design) built masks to hit f = 1.15 at
-each QBER and **every operating point failed to decode**. Asking for f = 1.15
-at QBER Q fixes the effective rate at R = 1 - 1.15 h(Q); for these ensembles
-the decoding threshold at that rate is *below* Q, so the decoder cannot work
-there no matter how the mask is built.
+## 3. Efficiency is an outcome, not an input
 
-The design loop therefore runs the other way:
+Design pass v1 built masks to hit f = 1.15 at each QBER and **every point failed**. Asking for f = 1.15 at QBER Q fixes the rate at R = 1 − 1.15·h(Q), and the decoding threshold at that rate lies below Q. The loop therefore runs the other way:
 
-1. Compute the density-evolution threshold as a function of rate for the chosen
-   degree profile.
-2. For each QBER, take the highest rate whose threshold still exceeds Q with a
-   finite-length margin.
-3. The achievable efficiency follows as f = (1 - R) / h(Q).
+1. Compute the density-evolution threshold against rate for the degree profile.
+2. For each QBER take the **highest rate whose threshold still exceeds Q** with a finite-length margin.
+3. Efficiency follows: f = (1 − R) / h(Q).
 
-The best f any ensemble can reach is set by the gap between its threshold and
-the Shannon limit. For the profile {3: 0.75, 6: 0.125, 8: 0.125} at R0 = 0.619
-the threshold is 5.74% against a Shannon limit of 7.38%, which caps f at about
-1.20 **at threshold** - and real operation needs margin below threshold, so
-f = 1.25-1.35 is the realistic target for this ensemble at n = 65,536.
+## 4. Degree profile and the threshold curve
 
-That is above the REQ-PERF-01 target of f <= 1.15, so one of three things has
-to give: a better degree profile, a longer code, or the requirement.
+Chosen profile (node perspective): **{3: 0.75, 6: 0.125, 8: 0.125}**, average column degree 4.0, heavy columns placed first so masks have a contiguous puncturable region.
 
+Density evolution under the actual decoder (normalized min-sum, α = 0.75), from `model/de.py`:
 
-## 2c. The design rule (M3, from results/m3_code_design_v3)
+| Rate | 0.475 | 0.550 | 0.625 | 0.700 | 0.775 | 0.850 | 0.925 |
+|---|---|---|---|---|---|---|---|
+| Threshold | 8.78% | 7.07% | 5.49% | 4.04% | 2.73% | 1.58% | 0.59% |
+| Shannon limit | 11.85% | 9.41% | 7.24% | 5.32% | 3.63% | 2.15% | 0.91% |
+| **f at threshold** | 1.223 | 1.221 | 1.223 | 1.229 | 1.245 | 1.278 | 1.432 |
 
-    A mother code sits at the TOP of the rate range it serves.
-    Lower rates are reached by SHORTENING, which measurement shows is safe.
-    PUNCTURING is used only within the 10% budget, to nudge above R0.
+**f at threshold is ≈ 1.22 at every rate.** That is the ensemble's ceiling — the gap between its threshold and capacity — and no mask, margin or iteration count can beat it.
 
-Three mother codes at n = 65,536 (base 512 columns, Z = 128), profile
-{3: 0.75, 6: 0.125, 8: 0.125}:
+## 5. The three mother codes
 
-| Code | R0 | base | serves | measured FER |
-|---|---|---|---|---|
-| v3_mother_0_r850 | 0.850 | 77 x 512 | Q = 1-2% | 0.00 |
-| v3_mother_1_r700 | 0.700 | 154 x 512 | Q = 3-6% | 0.00 |
-| v3_mother_2_r400 | 0.400 | 307 x 512 | Q = 8% | 0.00 |
+Built with PEG plus 4-cycle-free lifting (`model/peg.py`), n = 65,536, Z = 128, n_b = 512, 2,048 base edges each:
 
-Every punctured column set passes the GF(2) rank check, so `leak = m - p`
-is licensed rather than assumed.
+| Code | R₀ | layers m_b | syndrome bits | max row degree | serves |
+|---|---|---|---|---|---|
+| `v3_mother_0_r850` | 0.850 | 77 | 9,856 | **27** | Q = 1–2% |
+| `v3_mother_1_r700` | 0.700 | 154 | 19,712 | 14 | Q = 3–6% |
+| `v3_mother_2_r400` | 0.400 | 307 | 39,296 | 7 | Q = 8% |
 
-**Efficiency reached: f = 1.29-1.56 (margin 1.05) against a target of 1.15.**
-The ensemble's threshold gap caps f at about 1.22 before any finite-length
-margin, so closing the gap needs a numerically optimised degree distribution -
-this pass searched only 12 hand-written profiles. That optimisation is the
-next task for this document.
+## 6. Mask table and measured performance
 
+Margin 1.25 (threshold must exceed QBER by that factor):
 
-## 3. Baseline codes (for comparison only)
-- 5G NR BG1/BG2 at the largest lifting size.
-- IEEE 802.11n codes, for early RTL bring-up.
+| QBER | code R₀ | mask rate | punctured | shortened | leak | rank OK | f | **FER** | iterations |
+|---|---|---|---|---|---|---|---|---|---|
+| 1% | 0.850 | 0.850 | 0 | 0 | 9,920 | ✓ | 1.874 | 0.00 | 5.0 |
+| 2% | 0.850 | 0.775 | 0 | 21,760 | 9,920 | ✓ | 1.602 | 0.00 | 6.4 |
+| 3% | 0.700 | 0.701 | 128 | 0 | 19,648 | ✓ | 1.545 | 0.00 | 6.5 |
+| 4% | 0.700 | 0.625 | 0 | 12,928 | 19,776 | ✓ | 1.551 | 0.00 | 5.9 |
+| 5% | 0.700 | 0.575 | 0 | 19,200 | 19,776 | ✓ | 1.490 | 0.00 | 6.6 |
+| 6% | 0.700 | 0.525 | 0 | 24,064 | 19,776 | ✓ | 1.456 | 0.00 | 6.6 |
+| 8% | 0.400 | 0.400 | 0 | 0 | 39,360 | ✓ | 1.493 | 0.00 | 5.9 |
 
-## 4. Degree distribution
-- Density evolution for the BSC: variable/check degree distributions $\lambda(x), \rho(x)$ and decoding thresholds.
-- Record the threshold $Q^*$ versus rate, and compare with the Shannon limit $h^{-1}(1-R)$.
+Zero undetected errors. Every punctured column set passed the **GF(2) rank check** (`model/rank.py`), so the `leak = m − p` accounting of [05 §3.5](05-algorithm-spec.md#35-leakage-accounting) is licensed rather than assumed.
 
-## 5. Base-matrix construction
-- Protograph choice, PEG (or ACE/PEG) lifting, girth target (≥ 6, aim for 8), circulant shift optimisation.
-- Record: $m_b$, $n_b$, $Z$, number of edges $E$, average degrees, girth histogram.
+Tightening the margin trades efficiency against iterations, and therefore against decoder throughput:
 
-## 6. Rate adaptation masks
-For each mask id: design QBER $Q_d$, sets $\mathcal{P}$ and $\mathcal{S}$, sizes $p$ and $s$, effective $R$, **rank check of the punctured columns** (for [05 §3.5](05-algorithm-spec.md#35-leakage-accounting)), and resulting $\lambda_{frame}$.
+| Margin | f range | iterations | FER |
+|---|---|---|---|
+| 1.25 | 1.46–1.87 | 5–7 | 0.00 |
+| 1.10 | 1.35–1.56 | 8–11 | 0.00 |
+| 1.05 | 1.29–1.56 | 11–20 | 0.00 except 0.07 at Q = 3% |
 
-| mask_id | $Q_d$ | $p$ | $s$ | $R$ | rank OK? | $\lambda_{frame}$ |
-|---|---|---|---|---|---|---|
-| … | | | | | | |
+## 7. REQ-PERF-01 is not met
 
-## 7. Results (from L1/L2, experiment E1)
-FER and $f$ against $Q$ for each mask; comparison with the baselines of §3.
+Target f ≤ 1.15; measured floor **f ≈ 1.30**. The gap decomposes as:
 
-## 8. Decisions to record as ADRs
-Mother rate $R_0$ · lifting size $Z$ · layer schedule · mask set · final quantisation (linked to E2).
+| Contribution | Size |
+|---|---|
+| Ensemble's threshold gap | ≈ 1.22 |
+| Finite-length margin for FER ≤ 10⁻² | ≈ +0.08 at margin 1.05 |
+
+Masks and margins cannot close this. The levers, in order of expected value:
+
+1. **Optimise the degree distribution numerically** against the DE threshold. This pass evaluated 12 hand-written profiles; real LDPC design searches λ(x) and ρ(x), and published irregular ensembles sit much closer to capacity. **This is the next task for this document.**
+2. **Extend the rate grid above 0.925** — the 1% point's f = 1.87 is an artefact of the grid ceiling, not of the code.
+3. **Re-state the requirement** if the optimised ensemble lands near 1.2. A measured 1.2 is worth more than an aspirational 1.15.
+
+## 8. Reproduce
+
+```bash
+uv run python scripts/design_codes3.py --margin 1.25     # the current design
+uv run python scripts/export_code_mem.py --code codes/v3_mother_1_r700.npz --out rtl/gen
+```
+
+Design passes v1 and v2 are kept as `scripts/design_codes.py` and `design_codes2.py`; v2 also computes the threshold curve that v3 reuses.
