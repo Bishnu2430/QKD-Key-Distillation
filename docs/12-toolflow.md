@@ -27,7 +27,7 @@
 
 ## 2. Prove the flow (Week 1)
 
-**All Vivado work is done by hand in the GUI** — see [15-vivado-gui-guide](15-vivado-gui-guide.md) for the step-by-step procedure. In outline: create an RTL project on `xc7z020clg400-1`, add a small AXI4-Stream core and a 125 MHz constraint, enable **out-of-context** synthesis (the core has more ports than the clg400 package has user I/O pins), then run synthesis and implementation.
+**All Vivado work is done by hand in the GUI.** In outline: create an RTL project on `xc7z020clg400-1`, add a small AXI4-Stream core and a 125 MHz constraint, enable **out-of-context** synthesis (the core has more ports than the clg400 package has user I/O pins), then run synthesis and implementation.
 
 **Pass criteria:** 0 errors, WNS ≥ 0, block RAM inferred, reports copied into `results/` with a `result.yaml` header.
 
@@ -36,7 +36,7 @@
 2. Open the implemented design and run Report Power with that SAIF file.
 3. Record the number **and** the confidence level Vivado reports (REQ-REP-02).
 
-Full menu-level steps: [15 §8](15-vivado-gui-guide.md#8-simulation-and-the-saif-power-flow).
+Menu path: *Tools → Settings → Project Settings → Simulation* sets the `xsim.simulate.saif*` properties; *Reports → Report Power* then takes the SAIF file. Property names shift between Vivado versions, so check them against the version recorded in section 4.
 
 ## 4. Version pins (fill in on install)
 

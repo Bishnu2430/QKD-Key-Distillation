@@ -7,7 +7,7 @@ Every file in the repository: what it is for, and the part of it that matters. U
 | …this | go to |
 |---|---|
 | How the algorithm must behave, exactly | [`docs/05-algorithm-spec.md`](05-algorithm-spec.md) |
-| How to build something in Vivado | [`docs/stages/`](stages/) (decoder) and [`docs/15-vivado-gui-guide.md`](15-vivado-gui-guide.md) (the basics) |
+| How to build something in Vivado | [`docs/stages/`](stages/) — one document per bring-up stage, with complete RTL and every click |
 | The reference implementation of a stage | `model/*.py` — each module names the spec section it implements |
 | Why a choice was made | [`docs/14-rationale.md`](14-rationale.md) and [`docs/decisions/`](decisions/) |
 | A measured result | `results/<experiment>/README.md` |
@@ -124,11 +124,13 @@ Each writes into `results/` with a header recording the commit, parameters and s
 
 ### Vivado guides (you drive; nothing here is run by Claude)
 
+These live on disk but are **not tracked in git** (see "Not in git" below).
+
 | File | Purpose | Focus point |
 |---|---|---|
-| `15-vivado-gui-guide.md` | Vivado from scratch, via the week-1 flow test | Out-of-context synthesis, report reading, the SAIF power flow |
 | `stages/00-overview.md` | The decoder bring-up: what each stage delivers, project setup once | The staging order and why it is that order |
 | `stages/01-syndrome-checker.md` | **Stage 1, complete**: full RTL, full testbench, every click | The rotation function `dbl[k +: Z]` — get it backwards and every layer mismatches |
+| `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
 
 ### Blocks, decisions, log
 
@@ -198,6 +200,7 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 
 | Path | What it is |
 |---|---|
+| `docs/stages/`, `docs/blocks/`, `docs/decisions/`, `docs/log/` | Kept on disk as working documents, untracked by choice (16 Oct 2026) |
 | `vivado/` | Your Vivado projects (`axis_smoke`, `ldpc_decoder`). Regenerable from the sources, so ignored |
 | `tv/` | Generated test vectors. Regenerate with `export_test_vectors.py` |
 | `.venv/` | The uv environment |
