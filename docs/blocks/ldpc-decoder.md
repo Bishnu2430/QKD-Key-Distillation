@@ -63,7 +63,15 @@ With `Z = 128`, `n_b = 512`, `W_APP = 8`, `W_MSG = 6` ([spec §2.1](../05-algori
 | Layer pointers | `m_b + 1` × 16 b | < 4 Kb | |
 | Frame buffers | `n` + `m` bits | 64 Kb + m | Input `y` and syndrome |
 
-For the two M3 mother codes, substitute `m_b` and `N_EDGES` from `codes/*_params.svh`; the first-pass codes had `m_b = 67` (high rate) and `m_b = 195` (low rate) with about 2,000 base edges each.
+The three M3 mother codes ([results/m3_code_design_v3](../../results/m3_code_design_v3/README.md)) all share `n = 65,536`, `Z = 128`, `n_b = 512` and `N_EDGES = 2,048`, and differ only in the number of layers:
+
+| Code | serves | `m_b` | syndrome bits | max row degree |
+|---|---|---|---|---|
+| `v3_mother_0_r850` | Q = 1–2% | 77 | 9,856 | **27** |
+| `v3_mother_1_r700` | Q = 3–6% | 154 | 19,712 | 14 |
+| `v3_mother_2_r400` | Q = 8% | 307 | 39,296 | 7 |
+
+Size the CNU's serial minimum-finder for **27** neighbours, the widest row across the set, so one datapath serves all three codes. Check-node storage scales with `m_b`, so the low-rate code is the memory-sizing case: 307 × 128 = 39,296 checks.
 
 **Inference rules** that matter here (they decide whether you get BRAM or LUT RAM):
 - No reset on the memory array.

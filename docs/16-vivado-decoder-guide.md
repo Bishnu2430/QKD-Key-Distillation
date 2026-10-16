@@ -27,8 +27,10 @@ Run these in WSL from the repository root. They write into the repo; you then ad
 **Code memories and parameters** (from the M3 mother codes):
 
 ```bash
-uv run python scripts/export_code_mem.py --code codes/mother_low.npz --out rtl/gen
+uv run python scripts/export_code_mem.py --code codes/v3_mother_1_r700.npz --out rtl/gen
 ```
+
+> **These files are inputs, not build products.** Vivado never generates them: they carry the parity-check matrix from the code design into your RTL. Regenerate them only when the code changes, and keep them in the repository alongside the sources.
 
 Produces, for each code:
 
@@ -38,6 +40,16 @@ Produces, for each code:
 | `<name>_edges.mem` | One hex word per base-matrix entry: `{shift, column}`, in layer order then increasing column | `$readmemh` into the edge ROM |
 | `<name>_layer_ptr.mem` | First edge index of each layer | `$readmemh` into the layer-pointer ROM |
 | `<name>_edges.coe` | The same edge list for the Block Memory Generator | If you use the IP instead of inference |
+
+The three M3 mother codes ([results/m3_code_design_v3](../results/m3_code_design_v3/README.md)), all at `N_BITS` = 65,536, `Z` = 128, `N_B` = 512, `N_EDGES` = 2,048, `EDGE_BITS` = 16:
+
+| Code | serves | `M_B` (layers) | `M_BITS` (syndrome) | `MAX_ROW_DEG` |
+|---|---|---|---|---|
+| `v3_mother_0_r850` | Q = 1–2% | 77 | 9,856 | **27** |
+| `v3_mother_1_r700` | Q = 3–6% | 154 | 19,712 | 14 |
+| `v3_mother_2_r400` | Q = 8% | 307 | 39,296 | 7 |
+
+**Size the check-node unit's serial minimum-finder for `MAX_ROW_DEG` = 27**, the widest row across the three codes, so one datapath serves all of them. Everything else is parameterised by the `.svh`.
 
 **Test vectors** (bit-exact expectations from the L2 model):
 
@@ -64,10 +76,27 @@ Hex files are one 64-bit word per line, 16 digits, **LSB-first within the word**
 1. **Create Project** → name `ldpc_decoder`, location `D:/QKD-Key-Distillation/vivado`, **RTL Project**, *do not specify sources*, part **`xc7z020clg400-1`**.
 2. *Tools → Settings → Project Settings → General*: target language Verilog, simulator language Mixed.
 3. *Settings → Synthesis → More Options*: `-mode out_of_context` (the decoder has far more ports than the package has pins).
-4. **Add Sources → Add or create design sources → Add Directories**: add `D:/QKD-Key-Distillation/rtl` and `D:/QKD-Key-Distillation/rtl/gen`.
+4. **Add Sources → Add or create design sources → Add Directories**: add `D:/QKD-Key-Distillation/rtl`. This picks up your `.sv` files.
 5. **Add Sources → Add or create simulation sources**: add `D:/QKD-Key-Distillation/tb`.
 
-**`.mem` files:** add them as design sources too (*Add Sources → Add or create design sources*, filter `All Files`). Vivado then finds them by bare filename in `$readmemh`, in both simulation and synthesis. If you instead use an absolute path, simulation works and synthesis may not.
+### 3.1 Adding the generated files (they need their own pass)
+
+*Add Directories* will **not** bring in the `.mem` and `.svh` files, for two reasons that bite independently:
+
+- **It is a snapshot.** Vivado records the files present when you add the directory and never looks again. Anything generated afterwards is invisible until you add it.
+- **The file filter excludes them.** The dialog defaults to HDL extensions, and `.mem` is not one.
+
+So add them explicitly:
+
+1. **Add Sources → Add or create design sources → Next → Add Files**.
+2. Set the file-type dropdown to **All Files**.
+3. Select, from `rtl/gen`, the three files for the code you are working on, for example `v3_mother_1_r700_params.svh`, `v3_mother_1_r700_edges.mem`, `v3_mother_1_r700_layer_ptr.mem`.
+4. **Leave "Copy sources into project" unticked** — the project should reference the repository copies, so regenerating a code takes effect without re-adding anything.
+5. **Finish**.
+
+**Where they appear, and why that is correct:** the `.svh` is classified as a Verilog header, so it sits in its own group and stays out of the Hierarchy view until something `` `include ``s it. The `.mem` files land under *Design Sources → Non-module Files*. Both are right. What matters is that they are in the project, which is what makes `$readmemh("v3_mother_1_r700_edges.mem", rom)` resolve by bare filename in simulation **and** synthesis. An absolute path works in simulation and often fails in synthesis.
+
+**After regenerating a code:** if the filenames are unchanged, nothing to do — the project points at the files on disk. If a filename changes (a different mother code), repeat this section for the new files and remove the stale ones.
 
 ---
 
