@@ -35,3 +35,8 @@ results/raw/
 .DS_Store
 Thumbs.db
 .vscode/
+# kept locally, not tracked (decision 16 Oct 2026)
+docs/stages/
+docs/blocks/
+docs/decisions/
+docs/log/
