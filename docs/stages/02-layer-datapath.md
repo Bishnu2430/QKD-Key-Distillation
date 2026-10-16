@@ -73,8 +73,8 @@ module layer_datapath (
   localparam int unsigned ADDR_E   = $clog2(N_EDGES);      // 11
   localparam int unsigned W_APP    = 8;                    // spec 2.1
   localparam int unsigned W_MSG    = 6;
-  localparam int unsigned MAX_APP  = 127;
-  localparam int unsigned MAX_MSG  = 31;
+  localparam int          MAX_APP  = 127;   // signed: sat_add compares against it
+  localparam int unsigned MAX_MSG  = 31;    // unsigned: only ever compared with |T|
   localparam int unsigned APP_W    = Z * W_APP;            // 1024 bits per column
   localparam int unsigned IDX_BITS = $clog2(MAX_ROW_DEG + 1);
 
@@ -241,7 +241,7 @@ module layer_datapath (
           t_word = rot_lanes(word_q, shift_q);
           for (int i = 0; i < Z; i++) begin
             tl   = t_word[i*W_APP +: W_APP];
-            magv = (pos == idx[i]) ? min2[i][W_APP-1:0] : min1[i][W_APP-1:0];
+            magv = (pos == idx[i]) ? {1'b0, min2[i]} : {1'b0, min1[i]};  // 7 -> 8 bits
             nrm  = (magv >> 1) + (magv >> 2);                // alpha = 0.75
             rneg = sgn[i] ^ syn_q[i] ^ tl[W_APP-1];          // final sign of R
             rval = rneg ? -$signed({2'b00, nrm}) : $signed({2'b00, nrm});
@@ -449,6 +449,8 @@ The compare prints the first five mismatching lanes with expected and actual val
 
 | Pattern | Cause |
 |---|---|
+| Touched lanes read back as **x**, and the mismatch count equals the number of values the layer should have changed | An out-of-range part select somewhere: SystemVerilog returns x rather than erroring. `min1`/`min2` are `W_MSG+1` = 7 bits, so `min1[i][W_APP-1:0]` asks for a bit that does not exist. Zero-extend with `{1'b0, min1[i]}` instead |
+| Everything clamps to +127 | `MAX_APP` declared `int unsigned`, so the comparison in `sat_add` goes unsigned and every negative sum looks huge. Declare it `int` |
 | **Every** lane of every touched column is wrong | Rotation granularity: you rotated bits, not lanes. Check `k * W_APP` in `rot_lanes` |
 | Values are right but land in the **wrong columns** | The write-back rotation. It must be `(Z - shift) & (Z-1)`, not `shift` |
 | About half the lanes have the **right magnitude, wrong sign** | The syndrome twist. `rneg` must XOR `syn_q[i]` |
