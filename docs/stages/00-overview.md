@@ -16,12 +16,12 @@ A 65,536-bit decoder that "doesn't work" is almost impossible to diagnose from t
 | Stage | What you build | What it proves | Document |
 |---|---|---|---|
 | **1** | Syndrome checker | Edge ROM format, the address arithmetic `c·Z + ((i+shift) mod Z)`, the layer walk | [01-syndrome-checker](01-syndrome-checker.md) |
-| **2** | One layer of datapath | APP memory, cyclic shifter, subtract, check-node minimum-finder, normalisation, write-back | *next* |
+| **2** | One layer of datapath | APP memory, cyclic shifter, subtract, check-node minimum-finder, normalisation, write-back | [02-layer-datapath](02-layer-datapath.md) |
 | **3** | Full iteration loop | The controller, iteration counting, decoded output | — |
 | **4** | Early termination and status | Stopping at the iteration boundary; `ok` / `iterations` match the model exactly | — |
 | **5** | Rate masks | LLR initialisation for punctured and shortened positions | — |
 
-Stage 1 is written in full. Each later stage is written when you reach it, because its structure depends on choices you make in the one before (pipeline depth, memory banking) — and a document written against guesses would be worth less than one written against your actual stage-2 code.
+Stages 1 and 2 are written in full. Each later stage is written when you reach it, because its structure depends on choices you make in the one before (pipeline depth, memory banking) — and a document written against guesses would be worth less than one written against your actual stage-2 code.
 
 ---
 

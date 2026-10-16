@@ -168,3 +168,54 @@ def decode(
             return FixedDecodeResult(True, it, x_hat, llr)
 
     return FixedDecodeResult(False, max_iters, (llr < 0).astype(np.uint8), llr)
+
+
+def decode_layer_trace(
+    code: QCCode,
+    llr_init: np.ndarray,
+    syndrome: np.ndarray,
+    n_layers: int,
+    cfg: FixedConfig = DEFAULT,
+) -> list[np.ndarray]:
+    """Run the first ``n_layers`` layers of iteration 1, snapshotting the APP array.
+
+    Returns ``n_layers + 1`` arrays: the initial state, then the state after each
+    layer. This is the oracle for RTL bring-up stage 2 - a mismatch at layer k
+    localises the bug to one layer instead of one frame
+    (docs/stages/02-layer-datapath.md).
+
+    The arithmetic is identical to :func:`decode`; only the stopping point and
+    the snapshots differ.
+    """
+    llr = np.array(llr_init, dtype=np.int32, copy=True)
+    syndrome = np.asarray(syndrome, dtype=np.uint8)
+    r_msg = np.zeros((code.n_edges_base, code.z), dtype=np.int32)
+    rows = np.arange(code.z)
+    snapshots = [llr.copy()]
+
+    for r in range(min(n_layers, code.m_b)):
+        lo, hi = code.layer_ptr[r], code.layer_ptr[r + 1]
+        v = code.variables_of_layer(r)
+        sign_syn = np.where(syndrome[r * code.z : (r + 1) * code.z] == 0, 1, -1).astype(np.int32)
+
+        t = saturate(llr[v] - r_msg[lo:hi].T, cfg.max_app)
+        signs = np.where(t >= 0, 1, -1).astype(np.int32)
+        a = np.minimum(np.abs(t), cfg.max_msg)
+
+        idx = np.argmin(a, axis=1)
+        min1 = a[rows, idx]
+        a_wo = a.copy()
+        a_wo[rows, idx] = cfg.max_msg + 1
+        min2 = a_wo.min(axis=1)
+
+        mag = np.broadcast_to(min1[:, None], a.shape).copy()
+        mag[rows, idx] = min2
+
+        sgn = sign_syn * signs.prod(axis=1)
+        r_new = (sgn[:, None] * signs * normalise(mag, cfg.alpha_shifts)).astype(np.int32)
+
+        llr[v] = saturate(t + r_new, cfg.max_app)
+        r_msg[lo:hi] = r_new.T
+        snapshots.append(llr.copy())
+
+    return snapshots

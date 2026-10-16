@@ -1,0 +1,45 @@
+{
+  "generated": "2026-10-16",
+  "commit": "5bb6723",
+  "source_code_file": "codes/v3_mother_1_r700.npz",
+  "code": {
+    "n": 65536,
+    "m": 19712,
+    "z": 128,
+    "n_b": 512,
+    "m_b": 154,
+    "rate0": 0.6992,
+    "edges_base": 2048
+  },
+  "mask": {
+    "punctured_cols": 0,
+    "shorten_cols": 0,
+    "p": 0,
+    "s": 0,
+    "n_key": 65536,
+    "rate": 0.6992
+  },
+  "fixed_point": {
+    "w_ch": 5,
+    "w_msg": 6,
+    "w_app": 8,
+    "delta": 0.25,
+    "alpha": 0.75,
+    "alpha_shifts": [
+      1,
+      2
+    ]
+  },
+  "decoder": {
+    "max_iters": 60,
+    "channel_amplitude": 14
+  },
+  "channel": {
+    "qber": 0.03,
+    "qber_est": 0.03
+  },
+  "frames": 20,
+  "seed": 7,
+  "bit_order": "LSB-first within each 64-bit word (spec section 2)",
+  "command": "scripts/export_test_vectors.py --code codes/v3_mother_1_r700.npz --qber 0.03 --frames 20 --out tv/r700_q03"
+}

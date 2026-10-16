@@ -14,10 +14,14 @@ In WSL, from the repository root:
 
 ```bash
 uv run python scripts/export_test_vectors.py --code codes/v3_mother_1_r700.npz \
-    --qber 0.05 --frames 20 --out tv/r700_q05
+    --qber 0.03 --frames 20 --out tv/r700_q03
 ```
 
-This writes `tv/r700_q05/`. The files you need in this stage:
+> **Why 3% and not 5%.** These vectors use the r700 code **unmasked**, so it runs at its mother rate 0.700, whose decoding threshold is 4.04% ([06 §4](../06-ldpc-code-design.md#4-degree-profile-and-the-threshold-curve)). At 5% QBER every frame fails, `expected.csv` shows `ok=0`, and the exported word does *not* satisfy the syndrome — your checker would correctly report all 154 layers bad and you would spend the evening debugging working RTL. That code serves 5% only with shortening, which arrives in stage 5.
+>
+> **Always check `expected.csv` says `ok=1` before trusting a vector set.**
+
+This writes `tv/r700_q03/`. The files you need in this stage:
 
 | File | Size | Meaning |
 |---|---|---|
@@ -300,8 +304,8 @@ module tb_syndrome_checker;
   int          errors = 0;
 
   initial begin
-    $readmemh("tv/r700_q05/frames/000_xhat.hex",     xhat_words);
-    $readmemh("tv/r700_q05/frames/000_syndrome.hex", syn_words);
+    $readmemh("tv/r700_q03/frames/000_xhat.hex",     xhat_words);
+    $readmemh("tv/r700_q03/frames/000_syndrome.hex", syn_words);
 
     repeat (5) @(negedge clk);
     rst_n = 1'b1;
@@ -324,7 +328,8 @@ module tb_syndrome_checker;
       errors++;
     end
 
-    $display(errors == 0 ? "STAGE 1 PASSED" : "STAGE 1 FAILED");
+    if (errors == 0) $display("STAGE 1 PASSED");
+    else             $display("STAGE 1 FAILED");
     $finish;
   end
 
@@ -345,13 +350,13 @@ endmodule
 
 ## Step 5 — Point the simulator at the test vectors
 
-`$readmemh("tv/r700_q05/...")` is relative to the **simulation working directory**, which is
+`$readmemh("tv/r700_q03/...")` is relative to the **simulation working directory**, which is
 `vivado/ldpc_decoder/ldpc_decoder.sim/sim_1/behav/xsim`.
 
 Pick one of these:
 
 - **Simplest:** change the two `$readmemh` paths in the testbench to absolute, for example
-  `"D:/QKD-Key-Distillation/tv/r700_q05/frames/000_xhat.hex"`. Absolute paths are fine in a
+  `"D:/QKD-Key-Distillation/tv/r700_q03/frames/000_xhat.hex"`. Absolute paths are fine in a
   testbench; only synthesis dislikes them.
 - **Or** add the two `.hex` files as simulation sources (All Files filter) and use bare filenames.
 
@@ -379,7 +384,8 @@ STAGE 1 PASSED
 
 | Symptom | Almost certainly |
 |---|---|
-| `match=0` on the clean word, `bad_layers` ≈ 154 (every layer) | Rotation direction. Swap `dbl[k +: Z]` for `dbl[(Z-k) +: Z]` and see if it flips to passing — if it does, your shift convention was inverted |
+| `match=0` on the clean word, `bad_layers` = 154 (every layer) | **First check `expected.csv` says `ok=1` for that frame.** A frame the model failed to decode does not satisfy the syndrome, and your checker is right to reject it |
+| `match=0` on the clean word, every layer bad, and `ok=1` in `expected.csv` | Rotation direction. Swap `dbl[k +: Z]` for `dbl[(Z-k) +: Z]` and see if it flips to passing — if it does, your shift convention was inverted |
 | `match=0`, a handful of bad layers | Column/shift fields swapped, or the 128-bit word assembled in the wrong order. Check `{xhat_words[2*c+1], xhat_words[2*c]}` — the **higher** index is the **upper** half |
 | `match=1` on both the clean and the flipped word | The syndrome memory never loaded, so `acc` is being compared against zeros. Check `wr_s_en` timing in the waveform |
 | Every value is `X` | `$readmemh` found no file. Vivado prints a warning in the console — read it; it names the path it tried |
@@ -393,7 +399,17 @@ STAGE 1 PASSED
 
 Flow Navigator → **Run Synthesis** → **Open Synthesized Design** → *Reports → Report Utilization*.
 
-Expect roughly: 2 BRAM36 (the two memories), a few hundred LUTs (the rotator is a 128-bit barrel shifter), 0 DSP. If BRAM is 0, the memories became distributed RAM — tell me and I will look at the inference conditions with you.
+Measured on the first working build ([results/stage1_syndrome_checker](../../results/stage1_syndrome_checker/README.md)):
+
+| Resource | Used | % of device |
+|---|---|---|
+| Slice LUTs | 1,282 | 2.41 |
+| Slice registers | 195 | 0.18 |
+| Block RAM tiles | 4 (3 × RAMB36 + 2 × RAMB18) | 2.86 |
+| DSP | 0 | 0.00 |
+| Bonded IOB | **0** | 0.00 |
+
+Most of the LUTs are the rotator — a 128-bit rotate by a 7-bit amount is a seven-stage mux tree. If BRAM comes out as 0, the memories became distributed RAM; tell me and we will look at the inference conditions together.
 
 ---
 
