@@ -44,6 +44,14 @@ Sanity check you can do by eye: `app_init.hex` is full of `f2` and `0e` — that
 //   pass A - find min1/min2/index and the sign product for each of the Z lanes
 //   pass B - write back L = sat(T + R_new)
 // Three cycles per edge in each pass; stage 3 pipelines this.
+//
+// MEMORY STRUCTURE MATTERS AS MUCH AS THE ARITHMETIC. app_mem is 512 x 1024
+// bits and must become block RAM, which means exactly ONE write port and ONE
+// read port, both registered, both inside one always_ff. The read address is
+// muxed between the datapath and the test port; the write is muxed between the
+// load path and the datapath. Spread those accesses over two always_ff blocks
+// and Vivado reports "Unable to infer a block/distributed RAM ... 524288 bits
+// is too large".
 module layer_datapath (
     input  wire                     clk,
     input  wire                     rst_n,
@@ -53,7 +61,7 @@ module layer_datapath (
     input  wire [ADDR_X-1:0]        wr_app_addr,
     input  wire [APP_W-1:0]         wr_app_data,
     input  wire [ADDR_X-1:0]        rd_app_addr,
-    output logic [APP_W-1:0]        rd_app_data,
+    output wire [APP_W-1:0]         rd_app_data,
 
     // syndrome load port
     input  wire                     wr_s_en,
@@ -74,9 +82,28 @@ module layer_datapath (
   localparam int unsigned W_APP    = 8;                    // spec 2.1
   localparam int unsigned W_MSG    = 6;
   localparam int          MAX_APP  = 127;   // signed: sat_add compares against it
-  localparam int unsigned MAX_MSG  = 31;    // unsigned: only ever compared with |T|
+  localparam int unsigned MAX_MSG  = 31;    // unsigned: only compared with |T|
   localparam int unsigned APP_W    = Z * W_APP;            // 1024 bits per column
   localparam int unsigned IDX_BITS = $clog2(MAX_ROW_DEG + 1);
+
+  // --------------------------------------------------------------- state
+  typedef enum logic [3:0] {
+    S_IDLE, S_SETUP, S_A_ROM, S_A_MEM, S_A_ACC,
+    S_B_SETUP, S_B_ROM, S_B_MEM, S_B_WR, S_DONE
+  } state_t;
+
+  state_t                state;
+  logic [ADDR_E:0]       e_start, e_end, e_idx;
+  logic [IDX_BITS-1:0]   pos;
+  logic [EDGE_BITS-1:0]  rom_q;
+  logic [SHIFT_BITS-1:0] shift_q;
+  logic [COL_BITS-1:0]   col_q;
+
+  logic [W_MSG:0]        min1 [Z];      // one bit wider than W_MSG for the sentinel
+  logic [W_MSG:0]        min2 [Z];
+  logic [IDX_BITS-1:0]   idx  [Z];
+  logic                  sgn  [Z];      // running sign product, 1 = negative
+  logic [Z-1:0]          syn_q;
 
   // --------------------------------------------------------------- memories
   logic [APP_W-1:0]      app_mem  [N_B];
@@ -89,9 +116,9 @@ module layer_datapath (
     $readmemh("v3_mother_1_r700_layer_ptr.mem", layer_ptr_rom);
   end
 
+  // syndrome memory: small, one write, asynchronous read in S_SETUP
   always_ff @(posedge clk) begin
     if (wr_s_en) syn_mem[wr_s_addr] <= wr_s_data;
-    rd_app_data <= app_mem[rd_app_addr];        // registered read-back
   end
 
   // ------------------------------------------------------------- functions
@@ -118,43 +145,70 @@ module layer_datapath (
     end
   endfunction
 
-  // ------------------------------------------------------- per-lane state
-  logic [W_MSG:0]    min1 [Z];      // one bit wider than W_MSG for the sentinel
-  logic [W_MSG:0]    min2 [Z];
-  logic [IDX_BITS-1:0] idx [Z];
-  logic              sgn  [Z];      // running sign product, 1 = negative
-  logic [Z-1:0]      syn_q;
+  // ---------------------------------------------------- APP memory ports
+  // ONE read port, ONE write port. This is what makes it a BRAM.
+  logic [ADDR_X-1:0] app_raddr;
+  logic [APP_W-1:0]  app_q;        // registered read data, used by both users
+  logic              app_we;
+  logic [ADDR_X-1:0] app_waddr;
+  logic [APP_W-1:0]  app_wdata;
 
-  // --------------------------------------------------------------- control
-  typedef enum logic [3:0] {
-    S_IDLE, S_SETUP, S_A_ROM, S_A_MEM, S_A_ACC,
-    S_B_SETUP, S_B_ROM, S_B_MEM, S_B_WR, S_DONE
-  } state_t;
+  assign rd_app_data = app_q;
 
-  state_t                state;
-  logic [ADDR_E:0]       e_start, e_end, e_idx;
-  logic [IDX_BITS-1:0]   pos;
-  logic [EDGE_BITS-1:0]  rom_q;
-  logic [SHIFT_BITS-1:0] shift_q;
-  logic [COL_BITS-1:0]   col_q;
-  logic [APP_W-1:0]      word_q;
-
-  // combinational temporaries, assigned with = inside the loops below
+  // combinational write-back word, built from the registered read data
   logic [APP_W-1:0]        t_word, new_word;
   logic signed [W_APP-1:0] tl;
   logic [W_APP-1:0]        magv;
-  logic [W_MSG:0]          av, nrm;
+  logic [W_MSG:0]          nrm;
   logic signed [W_APP+1:0] rval;
   logic                    rneg;
 
+  // temporaries used only inside the control block (pass A accumulation)
+  logic signed [W_APP-1:0] ta;
+  logic [W_APP-1:0]        ma;
+  logic [W_MSG:0]          aa;
+
+  always_comb begin
+    t_word = rot_lanes(app_q, shift_q);
+    for (int i = 0; i < Z; i++) begin
+      tl   = t_word[i*W_APP +: W_APP];
+      magv = (pos == idx[i]) ? {1'b0, min2[i]} : {1'b0, min1[i]};
+      nrm  = (magv >> 1) + (magv >> 2);                 // alpha = 0.75, truncating
+      rneg = sgn[i] ^ syn_q[i] ^ tl[W_APP-1];           // final sign of R
+      rval = rneg ? -$signed({2'b00, nrm}) : $signed({2'b00, nrm});
+      new_word[i*W_APP +: W_APP] = sat_add(tl, rval);
+    end
+  end
+
+  always_comb begin
+    // read: the datapath while it is fetching a column, the test port otherwise
+    app_raddr = ((state == S_A_MEM) || (state == S_B_MEM))
+                ? rom_q[COL_BITS-1:0] : rd_app_addr;
+
+    // write: the load path has priority, otherwise the datapath write-back
+    if (wr_app_en) begin
+      app_we    = 1'b1;
+      app_waddr = wr_app_addr;
+      app_wdata = wr_app_data;
+    end else begin
+      app_we    = (state == S_B_WR);
+      app_waddr = col_q;
+      app_wdata = rot_lanes(new_word, (Z - shift_q) & (Z - 1));  // back to column order
+    end
+  end
+
+  always_ff @(posedge clk) begin
+    if (app_we) app_mem[app_waddr] <= app_wdata;
+    app_q <= app_mem[app_raddr];
+  end
+
+  // --------------------------------------------------------------- control
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       state <= S_IDLE;
       busy  <= 1'b0;
       done  <= 1'b0;
     end else begin
-      if (wr_app_en) app_mem[wr_app_addr] <= wr_app_data;
-
       case (state)
         S_IDLE: begin
           done <= 1'b0;
@@ -188,26 +242,24 @@ module layer_datapath (
           end
         end
 
-        S_A_MEM: begin
+        S_A_MEM: begin                       // app_raddr points at this column now
           col_q   <= rom_q[COL_BITS-1:0];
           shift_q <= rom_q[EDGE_BITS-1:COL_BITS];
-          word_q  <= app_mem[rom_q[COL_BITS-1:0]];
           state   <= S_A_ACC;
         end
 
-        S_A_ACC: begin
-          t_word = rot_lanes(word_q, shift_q);
+        S_A_ACC: begin                       // app_q holds the column
           for (int i = 0; i < Z; i++) begin
-            tl   = t_word[i*W_APP +: W_APP];
-            magv = tl[W_APP-1] ? (-tl) : tl;                 // |T|
-            av   = (magv > MAX_MSG) ? MAX_MSG[W_MSG:0] : magv[W_MSG:0];
-            sgn[i] <= sgn[i] ^ tl[W_APP-1];                  // sign product
-            if (av < min1[i]) begin                          // strict: first wins
+            ta = t_word[i*W_APP +: W_APP];
+            ma = ta[W_APP-1] ? (-ta) : ta;                  // |T|
+            aa = (ma > MAX_MSG) ? MAX_MSG[W_MSG:0] : ma[W_MSG:0];
+            sgn[i] <= sgn[i] ^ ta[W_APP-1];                 // sign product
+            if (aa < min1[i]) begin                         // strict: first wins
               min2[i] <= min1[i];
-              min1[i] <= av;
+              min1[i] <= aa;
               idx[i]  <= pos;
-            end else if (av < min2[i]) begin
-              min2[i] <= av;
+            end else if (aa < min2[i]) begin
+              min2[i] <= aa;
             end
           end
           e_idx <= e_idx + 1'b1;
@@ -233,22 +285,10 @@ module layer_datapath (
         S_B_MEM: begin
           col_q   <= rom_q[COL_BITS-1:0];
           shift_q <= rom_q[EDGE_BITS-1:COL_BITS];
-          word_q  <= app_mem[rom_q[COL_BITS-1:0]];
           state   <= S_B_WR;
         end
 
-        S_B_WR: begin
-          t_word = rot_lanes(word_q, shift_q);
-          for (int i = 0; i < Z; i++) begin
-            tl   = t_word[i*W_APP +: W_APP];
-            magv = (pos == idx[i]) ? {1'b0, min2[i]} : {1'b0, min1[i]};  // 7 -> 8 bits
-            nrm  = (magv >> 1) + (magv >> 2);                // alpha = 0.75
-            rneg = sgn[i] ^ syn_q[i] ^ tl[W_APP-1];          // final sign of R
-            rval = rneg ? -$signed({2'b00, nrm}) : $signed({2'b00, nrm});
-            new_word[i*W_APP +: W_APP] = sat_add(tl, rval);
-          end
-          // rotate back into column order and store
-          app_mem[col_q] <= rot_lanes(new_word, (Z - shift_q) & (Z - 1));
+        S_B_WR: begin                        // the write happens in the memory block
           e_idx <= e_idx + 1'b1;
           pos   <= pos + 1'b1;
           state <= S_B_ROM;
@@ -269,6 +309,32 @@ endmodule
 
 `default_nettype wire
 ```
+
+### Why the memory is written the way it is
+
+`app_mem` is 512 × 1,024 = 524,288 bits. It **must** become block RAM, and block
+RAM has two ports in total. So the module gives it exactly one write port and
+one read port, both registered, both inside a single `always_ff`:
+
+* the **read address** is muxed — the datapath's column while fetching, the test
+  port's address otherwise;
+* the **write** is muxed — the load path has priority, otherwise the datapath's
+  write-back;
+* `app_q` is the one registered read output, used by the datapath *and* wired to
+  `rd_app_data`.
+
+Spread those accesses across two `always_ff` blocks, or give the array two write
+ports, and synthesis reports:
+
+```
+[Synth 8-3391] Unable to infer a block/distributed RAM for 'app_mem_reg' because
+the memory pattern used is not supported. Failed to dissolve the memory into bits
+because the number of bits (524288) is too large.
+```
+
+That message means "I could not make this a RAM, so I tried to build half a
+million flip-flops instead". Simulation passes regardless, which is why this
+only shows up at synthesis.
 
 ### The five things that decide whether this works
 
@@ -458,7 +524,8 @@ The compare prints the first five mismatching lanes with expected and actual val
 | Magnitudes slightly too large | `nrm` must be `(magv>>1)+(magv>>2)`, truncating. Not `magv*3/4`, not rounded |
 | Values pinned at ±127 everywhere | Saturation is firing because `rval` has the wrong width or sign extension |
 | Layer 0 passes, layer 1 fails | Per-lane state not cleared in `S_SETUP`, so layer 1 inherits layer 0's minima |
-| Nothing changes at all | `app_mem` write in `S_B_WR` is being overridden by the `wr_app_en` load path — check `wr_app_en` is low during the run |
+| Nothing changes at all | The `app_mem` write is being overridden by the `wr_app_en` load path — check `wr_app_en` is low during the run |
+| Simulation passes but **synthesis** reports `[Synth 8-3391] Unable to infer a block/distributed RAM ... 524288 bits is too large` | The APP memory has more than one write port or more than one read port, or its accesses are split across two `always_ff` blocks. See "Why the memory is written the way it is" above |
 
 To see inside: add `state`, `e_idx`, `pos`, `min1[0]`, `min2[0]`, `idx[0]`, `sgn[0]` to the waveform. Layer 0 of this code has 14 edges, so pass A should take 14 × 3 cycles.
 
