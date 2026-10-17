@@ -142,3 +142,46 @@ def test_narrow_widths_degrade_rather_than_crash(small_code):
     res = fixed.decode(small_code, llr, f.syndrome, max_iters=20, cfg=cfg)
     assert isinstance(res.ok, bool)
     assert np.abs(res.llr).max() <= cfg.max_app
+
+
+# ---------------------------------------------------------------------------
+# the RTL oracles (docs/stages/02 and 03)
+# ---------------------------------------------------------------------------
+def test_layer_trace_over_every_layer_equals_one_iteration(small_code):
+    """Stage 2's oracle run to the end must equal stage 3's oracle after one pass."""
+    mask = qc.make_mask(small_code, 0)
+    rng = np.random.default_rng(11)
+    f = frame.make_frame(mask, 0.03, rng, qber_est=0.03)
+    llr = fixed.initial_llr(mask, f.y_key, 0.03)
+
+    by_layer = fixed.decode_layer_trace(small_code, llr, f.syndrome, small_code.m_b)
+    by_iter = fixed.decode_iteration_trace(small_code, llr, f.syndrome, 1)
+
+    assert np.array_equal(by_layer[-1], by_iter[1])
+    assert np.array_equal(by_layer[0], by_iter[0])
+
+
+def test_iteration_trace_agrees_with_the_decoder(small_code):
+    """The snapshot at iteration k is the decoder's state after k iterations.
+
+    This is what licenses comparing RTL against the trace: whatever the decoder
+    reports, the hardware is being held to the same arithmetic.
+    """
+    mask = qc.make_mask(small_code, 0)
+    rng = np.random.default_rng(12)
+    for _ in range(5):
+        f = frame.make_frame(mask, 0.04, rng, qber_est=0.04)
+        llr = fixed.initial_llr(mask, f.y_key, 0.04)
+        res = fixed.decode(small_code, llr, f.syndrome, max_iters=8)
+        trace = fixed.decode_iteration_trace(small_code, llr, f.syndrome, 8)
+        assert np.array_equal(res.llr, trace[res.iterations])
+
+
+def test_iteration_trace_never_stops_early(small_code):
+    """It must run the full count even after the frame is solved, as the RTL does."""
+    mask = qc.make_mask(small_code, 0)
+    rng = np.random.default_rng(13)
+    f = frame.make_frame(mask, 0.01, rng, qber_est=0.01)
+    llr = fixed.initial_llr(mask, f.y_key, 0.01)
+    trace = fixed.decode_iteration_trace(small_code, llr, f.syndrome, 6)
+    assert len(trace) == 7

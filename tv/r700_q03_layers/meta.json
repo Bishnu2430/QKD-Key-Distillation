@@ -1,6 +1,6 @@
 {
-  "generated": "2026-10-16",
-  "commit": "73aa083",
+  "generated": "2026-10-17",
+  "commit": "9fb1576",
   "source_code_file": "codes/v3_mother_1_r700.npz",
   "code": {
     "n": 65536,
@@ -27,10 +27,17 @@
     "qber": 0.03,
     "amplitude": 14
   },
+  "snapshot_unit": "layer",
+  "snapshots_dumped": 2,
   "layers_dumped": 2,
-  "values_changed_per_layer": [
+  "values_changed_per_snapshot": [
     1792,
     1664
+  ],
+  "unsatisfied_checks": [
+    5514,
+    5514,
+    5514
   ],
   "app_words_per_file": 8192,
   "words_per_base_column": 16,

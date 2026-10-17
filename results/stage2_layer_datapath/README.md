@@ -51,6 +51,19 @@ Compared with the [architecture estimate](../../docs/blocks/ldpc-decoder.md#11-r
 
 At 28% of the LUTs for the datapath alone, REQ-IMP-03 (≤ 70% LUT, ≤ 80% BRAM) is still reachable, but the margin is not generous. Stage 3 adds the check-message memory — roughly 19,712 checks × 30 bits ≈ 600 Kb, another 17 BRAM36 — which would put BRAM near 35 tiles, in line with the estimate. The rotator sharing is worth doing before the design grows further.
 
+## Rotator sharing (stage 2, step 7)
+
+The same design with `S_B_WR` split into `S_B_ROT` + `S_B_WR`, so that **one** 1,024-bit lane rotator serves both the read rotation and the write-back rotation instead of two running in parallel. The arithmetic is unchanged, so the functional result must stay `STAGE 2 PASSED`; the cost is one extra cycle per edge in pass B.
+
+| Resource | Two rotators | One rotator | Change |
+|---|---|---|---|
+| Slice LUTs | 15,040 | _to measure_ | |
+| Slice registers | 2,341 | _to measure_ | +1,024 expected (`wb_q`) |
+| Block RAM tiles | 18 | _to measure_ | none expected |
+| Cycles per layer (degree 14) | 6·14 + 5 = 89 | 7·14 + 5 = 103 | +16% |
+
+Procedure in [docs/stages/02-layer-datapath.md §7](../../docs/stages/02-layer-datapath.md#step-7--share-the-rotator-after-it-passes).
+
 ## Files
 
 | File | Source |
