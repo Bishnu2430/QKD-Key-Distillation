@@ -133,6 +133,7 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `stages/01-syndrome-checker.md` | **Stage 1, complete**: full RTL, full testbench, every click | The rotation function `dbl[k +: Z]` — get it backwards and every layer mismatches |
 | `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core, plus the rotator-sharing optimisation in step 7 | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
 | `stages/03-iteration-loop.md` | **Stage 3, complete**: the check-message memory and the iteration loop | The compressed record (min1, min2, idx, one sign bit per edge) is a *lossless* encoding of every message a layer sent, in a quarter of the bits |
+| `stages/04-early-termination.md` | **Stage 4, complete**: the syndrome check in the loop, status outputs, and the first clock constraint | The check must be its own pass over the edges — a layer's parity is only meaningful once every variable it touches has its final value for the iteration |
 
 ### Blocks, decisions, log
 
@@ -195,6 +196,9 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `e5_key_rate/` | Key rate against distance; efficiency decides maximum range |
 | `m3_code_design/`, `_v2/`, `_v3/` | The three code-design passes; `_v3/README.md` tells the whole story |
 | `m3_margin_1.05/`, `_1.10/` | Efficiency against iterations trade-off |
+| `stage1_syndrome_checker/` | Bring-up stage 1: edge ROM and address arithmetic, 1,282 LUT |
+| `stage2_layer_datapath/` | Bring-up stage 2: the arithmetic core, bit-exact per layer, 15,040 LUT — and the rotator-sharing before/after |
+| `stage3_iteration_loop/` | Bring-up stage 3: a decoded frame, bit-exact after 1, 3 and 6 iterations. 22,389 LUT, 72 BRAM tiles, of which 54 are the check-record memory |
 
 ---
 
@@ -204,6 +208,5 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 |---|---|
 | `docs/stages/`, `docs/blocks/`, `docs/decisions/`, `docs/log/` | Kept on disk as working documents, untracked by choice (16 Oct 2026) |
 | `vivado/` | Your Vivado projects (`axis_smoke`, `ldpc_decoder`). Regenerable from the sources, so ignored |
-| `tv/` | Generated test vectors. Regenerate with `export_test_vectors.py` |
 | `.venv/` | The uv environment |
 | `paper/` | LaTeX drafts (empty until M5) |
