@@ -59,7 +59,7 @@ Each writes into `results/` with a header recording the commit, parameters and s
 | File | Produces | Focus point |
 |---|---|---|
 | `export_code_mem.py` | `rtl/gen/<code>_edges.mem`, `_layer_ptr.mem`, `_edges.coe`, `_params.svh` | Packs each base-matrix entry as `{shift[6:0], column[8:0]}`. **These are inputs to Vivado, never outputs of it** |
-| `export_test_vectors.py` | `tv/<name>/` — frames, syndromes, expected outputs, `expected.csv` | Bit-exact expectations from the L2 model. This is the Python↔SystemVerilog handover |
+| `export_test_vectors.py` | `tv/<name>/` — frames, syndromes, expected outputs, `expected.csv`, `mask.mem` | Bit-exact expectations from the L2 model. This is the Python↔SystemVerilog handover. `mask.mem` is one digit per base column (0 key, 1 punctured, 2 shortened), which is what the RTL's mask memory loads |
 | `export_layer_dump.py` | `tv/<name>/app_init.hex`, `app_after_lNNN.hex` (per layer, stage 2) or `app_after_iNNN.hex` (per iteration, stage 3), `syndrome.hex` | Snapshots of the whole APP array so a mismatch localises to one layer or one iteration. `meta.json` also records unsatisfied checks per snapshot — the convergence trace the RTL must reproduce |
 
 ### Experiments
@@ -133,6 +133,7 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `stages/01-syndrome-checker.md` | **Stage 1, complete**: full RTL, full testbench, every click | The rotation function `dbl[k +: Z]` — get it backwards and every layer mismatches |
 | `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core, plus the rotator-sharing optimisation in step 7 | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
 | `stages/03-iteration-loop.md` | **Stage 3, complete**: the check-message memory and the iteration loop | The compressed record (min1, min2, idx, one sign bit per edge) is a *lossless* encoding of every message a layer sent, in a quarter of the bits |
+| `stages/05-rate-masks.md` | **Stage 5, complete**: the loader, mask memory and key memory | The key stream is indexed by key position, not by variable — the key-column counter advances only on key columns |
 | `stages/04-early-termination.md` | **Stage 4, complete**: the syndrome check in the loop, status outputs, and the first clock constraint | The check must be its own pass over the edges — a layer's parity is only meaningful once every variable it touches has its final value for the iteration |
 
 ### Blocks, decisions, log
@@ -158,6 +159,7 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `layer_datapath.sv` | **Bring-up stage 2**: one layer of the decoder, first-iteration semantics | One lane rotator shared between the read and the write-back, which is why `S_B_WR` is split in two |
 | `ldpc_core.sv` | **Bring-up stage 3**: the check-record memory and the iteration loop | `cn_mem` is 154 × 3,840 bits and needs `ram_style = "block"`, or it becomes LUT RAM and eats the device |
 | `ldpc_decoder.sv` | **Bring-up stage 4**: the decoder, with early termination and status | The syndrome check is its own pass over the edges — a layer's parity only means something once the iteration is finished |
+| `ldpc_decoder_rate.sv` | **Bring-up stage 5**: the same decoder with the mask-aware loader | Punctured positions start at 0, shortened at +127, key positions at ±A — and only key columns consume key bits |
 | `gen/*_params.svh` | Generated SystemVerilog parameters per code | `MAX_ROW_DEG` differs per code: 27 / 14 / 7. Size the CNU for 27 |
 | `gen/*_edges.mem` | Generated edge list, 2,048 words of `{shift, column}` | Read with `$readmemh` by bare filename |
 | `gen/*_layer_ptr.mem` | First edge index of each layer | 155 / 308 lines depending on the code |
