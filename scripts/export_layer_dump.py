@@ -8,11 +8,19 @@ from the bit-true L2 model.
     uv run python scripts/export_layer_dump.py --code codes/v3_mother_1_r700.npz \
         --qber 0.03 --layers 2 --out tv/r700_q03_layers
 
+With ``--iters N`` instead of ``--layers``, the snapshots are taken after each
+full iteration rather than after each layer - the oracle for stage 3, which runs
+the whole layer schedule with real check messages:
+
+    uv run python scripts/export_layer_dump.py --code codes/v3_mother_1_r700.npz \
+        --qber 0.03 --iters 3 --out tv/r700_q03_iters
+
 Files written (hex, 16 digits per 64-bit word, LSB-first, per spec section 2):
 
     app_init.hex          APP array before any layer runs
     app_after_l000.hex    after layer 0
     app_after_l001.hex    after layer 1 (and so on)
+    app_after_i000.hex    after iteration 1, with --iters (and so on)
     syndrome.hex          the frame's syndrome, needed for the sign twist
     meta.json             code shape, fixed-point configuration, amplitude, seed
 
@@ -64,6 +72,8 @@ def main() -> None:
     ap.add_argument("--code", type=Path, required=True)
     ap.add_argument("--qber", type=float, default=0.03)
     ap.add_argument("--layers", type=int, default=2)
+    ap.add_argument("--iters", type=int, default=0,
+                    help="snapshot after each full iteration instead of each layer")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
@@ -77,17 +87,28 @@ def main() -> None:
     f = frame.make_frame(mask, args.qber, rng, qber_est=args.qber)
     llr = fixed.initial_llr(mask, f.y_key, args.qber, cfg)
 
-    snapshots = fixed.decode_layer_trace(code, llr, f.syndrome, args.layers, cfg)
+    by_iteration = args.iters > 0
+    if by_iteration:
+        snapshots = fixed.decode_iteration_trace(code, llr, f.syndrome, args.iters, cfg)
+        tag, count = "i", args.iters
+    else:
+        snapshots = fixed.decode_layer_trace(code, llr, f.syndrome, args.layers, cfg)
+        tag, count = "l", args.layers
 
     args.out.mkdir(parents=True, exist_ok=True)
     write_app_hex(args.out / "app_init.hex", snapshots[0])
     for i, snap in enumerate(snapshots[1:]):
-        write_app_hex(args.out / f"app_after_l{i:03d}.hex", snap)
+        write_app_hex(args.out / f"app_after_{tag}{i:03d}.hex", snap)
     (args.out / "syndrome.hex").write_text(
         "\n".join(bits.to_hex_lines(f.syndrome)) + "\n", encoding="utf-8")
 
     changed = [int(np.count_nonzero(snapshots[i + 1] != snapshots[i]))
                for i in range(len(snapshots) - 1)]
+    # Unsatisfied checks after each snapshot: the one number that says whether
+    # the decoder is converging. Stage 3 should see it fall to 0.
+    unsatisfied = [int(np.count_nonzero(code.syndrome((snap < 0).astype(np.uint8))
+                                        ^ np.asarray(f.syndrome, dtype=np.uint8)))
+                   for snap in snapshots]
 
     (args.out / "meta.json").write_text(json.dumps({
         "generated": date.today().isoformat(), "commit": git_commit(),
@@ -99,8 +120,11 @@ def main() -> None:
                         "alpha_shifts": list(cfg.alpha_shifts),
                         "max_app": cfg.max_app, "max_msg": cfg.max_msg},
         "channel": {"qber": args.qber, "amplitude": amplitude},
+        "snapshot_unit": "iteration" if by_iteration else "layer",
+        "snapshots_dumped": count,
         "layers_dumped": args.layers,
-        "values_changed_per_layer": changed,
+        "values_changed_per_snapshot": changed,
+        "unsatisfied_checks": unsatisfied,
         "app_words_per_file": code.n // 8,
         "words_per_base_column": code.z // 8,
         "seed": args.seed,
@@ -108,12 +132,15 @@ def main() -> None:
         "command": " ".join(sys.argv),
     }, indent=2), encoding="utf-8")
 
-    print(f"wrote {args.layers + 1} snapshots to {args.out}")
+    unit = "iteration" if by_iteration else "layer"
+    print(f"wrote {count + 1} snapshots to {args.out}")
     print(f"  code n={code.n} m={code.m} layers={code.m_b}, amplitude A={amplitude}")
     print(f"  APP file: {code.n // 8} lines of 64-bit hex "
           f"({code.z // 8} lines per base column)")
+    print(f"  before:       {unsatisfied[0]} of {code.m} checks unsatisfied")
     for i, n_changed in enumerate(changed):
-        print(f"  layer {i:3d}: {n_changed} of {code.n} APP values changed")
+        print(f"  {unit} {i:3d}: {n_changed:6d} of {code.n} APP values changed, "
+              f"{unsatisfied[i + 1]} of {code.m} checks unsatisfied")
 
 
 if __name__ == "__main__":

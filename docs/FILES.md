@@ -60,6 +60,7 @@ Each writes into `results/` with a header recording the commit, parameters and s
 |---|---|---|
 | `export_code_mem.py` | `rtl/gen/<code>_edges.mem`, `_layer_ptr.mem`, `_edges.coe`, `_params.svh` | Packs each base-matrix entry as `{shift[6:0], column[8:0]}`. **These are inputs to Vivado, never outputs of it** |
 | `export_test_vectors.py` | `tv/<name>/` — frames, syndromes, expected outputs, `expected.csv` | Bit-exact expectations from the L2 model. This is the Python↔SystemVerilog handover |
+| `export_layer_dump.py` | `tv/<name>/app_init.hex`, `app_after_lNNN.hex` (per layer, stage 2) or `app_after_iNNN.hex` (per iteration, stage 3), `syndrome.hex` | Snapshots of the whole APP array so a mismatch localises to one layer or one iteration. `meta.json` also records unsatisfied checks per snapshot — the convergence trace the RTL must reproduce |
 
 ### Experiments
 
@@ -130,7 +131,8 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 |---|---|---|
 | `stages/00-overview.md` | The decoder bring-up: what each stage delivers, project setup once | The staging order and why it is that order |
 | `stages/01-syndrome-checker.md` | **Stage 1, complete**: full RTL, full testbench, every click | The rotation function `dbl[k +: Z]` — get it backwards and every layer mismatches |
-| `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
+| `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core, plus the rotator-sharing optimisation in step 7 | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
+| `stages/03-iteration-loop.md` | **Stage 3, complete**: the check-message memory and the iteration loop | The compressed record (min1, min2, idx, one sign bit per edge) is a *lossless* encoding of every message a layer sent, in a quarter of the bits |
 
 ### Blocks, decisions, log
 
