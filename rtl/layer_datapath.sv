@@ -51,7 +51,7 @@ module layer_datapath (
   // --------------------------------------------------------------- state
   typedef enum logic [3:0] {
     S_IDLE, S_SETUP, S_A_ROM, S_A_MEM, S_A_ACC,
-    S_B_SETUP, S_B_ROM, S_B_MEM, S_B_WR, S_DONE
+    S_B_SETUP, S_B_ROM, S_B_MEM, S_B_ROT, S_B_WR, S_DONE
   } state_t;
 
   state_t                state;
@@ -119,6 +119,7 @@ module layer_datapath (
 
   // combinational write-back word, built from the registered read data
   logic [APP_W-1:0]        t_word, new_word;
+  logic [APP_W-1:0]        wb_q;    // new_word, held while the rotator turns around
   logic signed [W_APP-1:0] tl;
   logic [W_APP-1:0]        magv;
   logic [W_MSG:0]          nrm;
@@ -130,8 +131,27 @@ module layer_datapath (
   logic [W_APP-1:0]        ma;
   logic [W_MSG:0]          aa;
 
+  // the one and only lane rotator
+  // Two users, never in the same cycle - which is the whole reason S_B_WR was
+  // split in two. In S_B_WR it rotates the held word back to column order; in
+  // every other state it rotates the freshly read column into check order.
+  logic [APP_W-1:0]      rot_in, rot_out;
+  logic [SHIFT_BITS-1:0] rot_amt;
+
   always_comb begin
-    t_word = rot_lanes(app_q, shift_q);
+    if (state == S_B_WR) begin
+      rot_in  = wb_q;
+      rot_amt = (Z - shift_q) & (Z - 1);   // inverse: back to column order
+    end else begin
+      rot_in  = app_q;
+      rot_amt = shift_q;                   // forward: into check order
+    end
+    rot_out = rot_lanes(rot_in, rot_amt);
+  end
+
+  assign t_word = rot_out;                 // valid in S_A_ACC and in S_B_ROT
+
+  always_comb begin
     for (int i = 0; i < Z; i++) begin
       tl   = t_word[i*W_APP +: W_APP];
       magv = (pos == idx[i]) ? {1'b0, min2[i]} : {1'b0, min1[i]};
@@ -155,7 +175,7 @@ module layer_datapath (
     end else begin
       app_we    = (state == S_B_WR);
       app_waddr = col_q;
-      app_wdata = rot_lanes(new_word, (Z - shift_q) & (Z - 1));  // back to column order
+      app_wdata = rot_out;                 // the same rotator, inverse direction
     end
   end
 
@@ -247,10 +267,15 @@ module layer_datapath (
         S_B_MEM: begin
           col_q   <= rom_q[COL_BITS-1:0];
           shift_q <= rom_q[EDGE_BITS-1:COL_BITS];
-          state   <= S_B_WR;
+          state   <= S_B_ROT;
         end
 
-        S_B_WR: begin                        // the write happens in the memory block
+        S_B_ROT: begin       // app_q holds the column: do the arithmetic and hold it
+          wb_q  <= new_word;
+          state <= S_B_WR;
+        end
+
+        S_B_WR: begin        // rot_out is now wb_q in column order; the memory writes it
           e_idx <= e_idx + 1'b1;
           pos   <= pos + 1'b1;
           state <= S_B_ROM;
