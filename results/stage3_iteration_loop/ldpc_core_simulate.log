@@ -1,0 +1,19 @@
+Time resolution is 1 ps
+running 1 iteration(s) ...
+    iteration 1 done at 128716000
+after 1 iteration(s): 0 lane mismatches
+running 3 iteration(s) ...
+    iteration 1 done at 264348000
+    iteration 2 done at 386428000
+    iteration 3 done at 508508000
+after 3 iteration(s): 0 lane mismatches
+running 6 iteration(s) ...
+    iteration 1 done at 644140000
+    iteration 2 done at 766220000
+    iteration 3 done at 888300000
+    iteration 4 done at 1010380000
+    iteration 5 done at 1132460000
+    iteration 6 done at 1254540000
+after 6 iteration(s): 0 lane mismatches
+STAGE 3 PASSED
+$finish called at time : 1262736 ns : File "D:/QKD-Key-Distillation/tb/tb_ldpc_core.sv" Line 144

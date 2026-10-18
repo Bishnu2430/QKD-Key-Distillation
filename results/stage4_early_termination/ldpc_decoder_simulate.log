@@ -1,0 +1,23 @@
+Time resolution is 1 ps
+frame 0: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 1: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 2: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 3: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 4: ok=1 iters=7 (expected ok=1 iters=7), 153224 cycles
+frame 5: ok=1 iters=7 (expected ok=1 iters=7), 153224 cycles
+frame 6: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 7: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 8: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 9: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 10: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 11: ok=1 iters=7 (expected ok=1 iters=7), 153224 cycles
+frame 12: ok=1 iters=7 (expected ok=1 iters=7), 153224 cycles
+frame 13: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 14: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 15: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 16: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 17: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 18: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+frame 19: ok=1 iters=6 (expected ok=1 iters=6), 131357 cycles
+STAGE 4 PASSED
+$finish called at time : 21987944 ns : File "D:/QKD-Key-Distillation/tb/tb_ldpc_decoder.sv" Line 159
