@@ -1,0 +1,5 @@
+frame,ok,iterations,amplitude,errors_in,matches_alice,n_key_bits,syndrome_bits
+0,1,13,12,2314,1,47488,19712
+1,1,16,12,2308,1,47488,19712
+2,1,17,12,2353,1,47488,19712
+3,1,17,12,2343,1,47488,19712

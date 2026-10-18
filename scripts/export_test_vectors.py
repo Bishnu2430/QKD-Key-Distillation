@@ -12,6 +12,7 @@ Files written (all hex, 16 digits per 64-bit word, LSB-first per spec section 2)
 
     meta.json        code shape, mask, fixed-point configuration, seeds
     base_matrix.txt  the base matrix, one row per line, -1 for a zero block
+    mask.mem         one digit per base column: 0 key, 1 punctured, 2 shortened
     frames/NNN_y.hex        Bob's received key bits
     frames/NNN_syndrome.hex Alice's syndrome
     frames/NNN_xhat.hex     expected decoded key bits
@@ -43,6 +44,40 @@ def git_commit() -> str:
         return "unknown"
 
 
+def shortened_columns(n_b: int, count: int, punctured) -> list[int]:
+    """Spread ``count`` shortened columns over the columns that are not punctured.
+
+    ``code.spread_columns`` spreads over the whole block, so with a punctured set
+    that is also spread the two collide and ``make_mask`` refuses the mask. This
+    picks from the free columns instead, which keeps the spread and never
+    collides. It is deliberately local to this script: the sweeps in
+    ``results/c1_rate_adaptation`` were produced with the model's own helper and
+    must stay reproducible.
+    """
+    if count <= 0:
+        return []
+    taken = set(int(c) for c in punctured)
+    free = [c for c in range(n_b) if c not in taken]
+    if count > len(free):
+        raise ValueError(f"cannot shorten {count} of {len(free)} free columns")
+    step = len(free) / count
+    return sorted({free[int((i + 0.5) * step)] for i in range(count)})
+
+
+def write_mask_mem(path: Path, mask) -> None:
+    """One line per base column: 0 = key, 1 = punctured, 2 = shortened.
+
+    This is what the RTL's mask memory is loaded from (bring-up stage 5). Masks
+    are column-granular, so one digit per base column says everything.
+    """
+    cls = ["0"] * mask.code.n_b
+    for c in mask.punctured_cols:
+        cls[int(c)] = "1"
+    for c in mask.shortened_cols:
+        cls[int(c)] = "2"
+    path.write_text("\n".join(cls) + "\n", encoding="utf-8")
+
+
 def write_hex(path: Path, vector: np.ndarray) -> None:
     path.write_text("\n".join(bits.to_hex_lines(vector)) + "\n", encoding="utf-8")
 
@@ -61,10 +96,11 @@ def main() -> None:
     args = ap.parse_args()
 
     code = qc.load_code(args.code)
+    punct = qc.spread_columns(code.n_b, args.puncture_cols)
     mask = qc.make_mask(
         code, 0,
-        punctured_cols=qc.spread_columns(code.n_b, args.puncture_cols),
-        shortened_cols=qc.spread_columns(code.n_b, args.shorten_cols, offset=code.n_b // 2),
+        punctured_cols=punct,
+        shortened_cols=shortened_columns(code.n_b, args.shorten_cols, punct),
     )
     cfg = fixed.DEFAULT
     qber_est = args.qber if args.qber_est is None else args.qber_est
@@ -77,6 +113,9 @@ def main() -> None:
     # the base matrix, so the testbench can build the same code
     rows = [" ".join(str(int(v)) for v in code.base[r]) for r in range(code.m_b)]
     (out / "base_matrix.txt").write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+    # the rate mask, as the RTL's mask memory wants it (bring-up stage 5)
+    write_mask_mem(out / "mask.mem", mask)
 
     rng = np.random.default_rng(args.seed)
     records = []

@@ -57,7 +57,22 @@ Early termination is therefore worth **5.15×** on this operating point, for bit
 
 **1. Removing the clearing multiplexer saved more than predicted.** Stage 3 chose `cn_wdata` between the new record and all-zeros: 3,840 bits of 2:1 multiplexer, which I estimated at ~1,900 LUTs. Zeroing the per-lane registers at `start` instead removed about 4,000 LUTs of logic — the multiplexer plus the fan-out tree that drove it. The syndrome check sweep it paid for costs almost nothing, as predicted: 128 XOR gates, a 128-bit comparison, and reuse of the existing rotator, APP port and ROMs. Compare stage 1's standalone checker at 1,282 LUTs.
 
-**2. The syndrome memory moved from block RAM to LUT RAM.** In stage 3, `syn_mem` was read in one place and Vivado inferred 2 RAMB36. In stage 4 it is read in two (`S_SETUP` for the decode sweep, `S_C_SETUP` for the check sweep), so Vivado built it from distributed RAM instead: 516 LUTs in place of 2 BRAM tiles. That is a good trade here — BRAM is the binding resource — but it is an inference decision, not a design decision, so it is worth knowing it happened.
+**2. The syndrome memory moved from block RAM to LUT RAM.** `syn_mem` was 2 RAMB36 in stage 3 and is 516 LUTs of distributed RAM here. The obvious explanation — stage 4 reads it in two places (`S_SETUP` and `S_C_SETUP`) — is **wrong**, and it is worth recording why, because the real cause is more useful:
+
+> Re-synthesising the *unchanged* stage-3 module with `constraints/ldpc.xdc` in the project (18 Oct, 21:53) gives 516 LUTs of distributed RAM and 70 BRAM tiles too — the same swap, with one reader. So the trigger is the **clock constraint**, not the second reader: given a 125 MHz target, Vivado prefers LUT RAM for a 154 × 128 memory because distributed RAM has no mandatory output register and so a shorter path to the first logic stage. Without a constraint it had no reason to care and chose the denser option.
+
+A good trade either way — BRAM is the binding resource and LUTs are not — but it is an inference decision driven by a constraint, which is exactly the kind of thing that changes under the user's feet between runs.
+
+### Stage 3's module, re-synthesised with the clock constraint
+
+| Resource | No constraints (16 Oct) | With `ldpc.xdc` (18 Oct) |
+|---|---|---|
+| Slice LUTs | 22,389 | 22,556 |
+| — of which LUT as memory | 0 | 516 |
+| Slice registers | 8,914 | 9,008 |
+| Block RAM tiles | 72 | 70 |
+
+Same RTL, same part, same tool. The lesson for the write-up: **area numbers quoted without the constraint set are not reproducible**, so every figure in the paper needs to come from a constrained run.
 
 ### Where the block RAM is now
 
