@@ -154,6 +154,10 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | File | Purpose | Focus point |
 |---|---|---|
 | `axis_smoke.sv` | Week-1 flow test: AXI4-Stream FIFO with an XOR checksum | Not part of the accelerator. It proved BRAM inference, handshake correctness and timing closure |
+| `syndrome_checker.sv` | **Bring-up stage 1**: walks the edge list and checks a word against a syndrome | The address arithmetic `c·Z + ((i+shift) mod Z)`, in its simplest possible setting |
+| `layer_datapath.sv` | **Bring-up stage 2**: one layer of the decoder, first-iteration semantics | One lane rotator shared between the read and the write-back, which is why `S_B_WR` is split in two |
+| `ldpc_core.sv` | **Bring-up stage 3**: the check-record memory and the iteration loop | `cn_mem` is 154 × 3,840 bits and needs `ram_style = "block"`, or it becomes LUT RAM and eats the device |
+| `ldpc_decoder.sv` | **Bring-up stage 4**: the decoder, with early termination and status | The syndrome check is its own pass over the edges — a layer's parity only means something once the iteration is finished |
 | `gen/*_params.svh` | Generated SystemVerilog parameters per code | `MAX_ROW_DEG` differs per code: 27 / 14 / 7. Size the CNU for 27 |
 | `gen/*_edges.mem` | Generated edge list, 2,048 words of `{shift, column}` | Read with `$readmemh` by bare filename |
 | `gen/*_layer_ptr.mem` | First edge index of each layer | 155 / 308 lines depending on the code |
@@ -163,8 +167,13 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 
 | File | Purpose | Focus point |
 |---|---|---|
-| `constraints/timing_125mhz.xdc` | 8 ns clock, 1 ns I/O delays, false path on reset | The I/O delays make an out-of-context timing report meaningful |
+| `constraints/ldpc.xdc` | The decoder's 125 MHz clock, 2 ns I/O budget, false path on reset | Added at stage 4. Stages 1–3 were synthesised with no constraints at all, so their timing numbers do not exist |
+| `constraints/timing_125mhz.xdc` | The same idea for the week-1 `axis_smoke` core | Belongs to the other Vivado project; keep it out of `ldpc_decoder`, or two `create_clock` commands fight over `clk` |
 | `tb/tb_axis_smoke.sv` | Testbench for the week-1 core | Drives random back-pressure; samples on the falling edge to avoid races |
+| `tb/tb_syndrome_checker.sv` | Stage 1 testbench | Checks a clean word and a deliberately flipped one — a checker that always says yes passes the first test only |
+| `tb/tb_layer_datapath.sv` | Stage 2 testbench | Compares all 65,536 APP values against the per-layer snapshots, reporting the first five mismatching lanes |
+| `tb/tb_ldpc_core.sv` | Stage 3 testbench | Reloads the starting state before each run, because the DUT clears its record memory at every `start` |
+| `tb/tb_ldpc_decoder.sv` | Stage 4 testbench | Reads `expected.csv` with `$fscanf` and checks `ok`, `iterations` and every decoded bit, for 20 frames |
 
 ---
 
@@ -199,6 +208,7 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `stage1_syndrome_checker/` | Bring-up stage 1: edge ROM and address arithmetic, 1,282 LUT |
 | `stage2_layer_datapath/` | Bring-up stage 2: the arithmetic core, bit-exact per layer, 15,040 LUT — and the rotator-sharing before/after |
 | `stage3_iteration_loop/` | Bring-up stage 3: a decoded frame, bit-exact after 1, 3 and 6 iterations. 22,389 LUT, 72 BRAM tiles, of which 54 are the check-record memory |
+| `stage4_early_termination/` | Bring-up stage 4: all 20 frames match `ok`, `iterations` and every decoded bit. 18,836 LUT (35.4%), 70 BRAM tiles, 60.3 Mbit/s at 125 MHz |
 
 ---
 
