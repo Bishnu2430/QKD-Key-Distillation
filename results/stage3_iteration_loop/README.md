@@ -78,9 +78,24 @@ Predicted 16,000–20,000; measured 22,389. The overshoot is concentrated in two
 
 Still inside, with the syndrome check (stage 4, roughly stage 1's 1,282 LUTs), the rate masks (stage 5, small) and then the AXI wrapper, verification hash and privacy amplification still to come. The `cn_mem` reshaping alone would return 33 tiles, which is most of what the rest of the system needs.
 
+## Re-synthesised with a clock constraint (18 Oct)
+
+The figures above come from a run with **no constraints file at all** (`No constraint files found` in the log), which is why no timing number accompanies them. Re-running the same module once `constraints/ldpc.xdc` existed changed the area too:
+
+| Resource | No constraints | With `ldpc.xdc` at 125 MHz |
+|---|---|---|
+| Slice LUTs | 22,389 (42.08%) | 22,556 (42.40%) |
+| — of which LUT as memory | 0 | 516 |
+| Slice registers | 8,914 | 9,008 |
+| Block RAM tiles | 72 | 70 |
+
+Same RTL, same part, same tool version. Given a clock to meet, Vivado moved `syn_mem` (154 × 128 bits) out of block RAM and into distributed RAM, trading 516 LUTs for 2 BRAM tiles — distributed RAM has no mandatory output register, so it reaches the first logic stage sooner. With no constraint it had no reason to prefer that and chose the denser option.
+
+**Consequence for the write-up:** quote area only from constrained runs. The unconstrained numbers above are kept because they are what stages 1–3 were brought up against, but the constrained column is the one that belongs in the paper.
+
 ## Not yet measured
 
-- **No timing numbers.** The synthesis log records `No constraint files found`, so there is no clock definition and nothing to report against: WNS and Fmax are both unknown. A constraints file is the first step of [stage 4](../../docs/stages/04-early-termination.md), because from here on the critical path is the real one — APP read → rotate → subtract `R_old` → compare → select → add → rotate → write.
+- **Timing.** The constrained re-synthesis above was saved as an interactive report (`timing_1.rpx`), which only opens inside Vivado. A text report — `report_timing_summary -file …rpt` in the Tcl console — is still needed before WNS and Fmax can be quoted.
 - **The stage-2 rotator-sharing figure.** Stage 2 passed with the shared rotator but was not re-synthesised, so the before/after LUT pair in [stage 2's results](../stage2_layer_datapath/README.md) is still open. It is one *Set as Top* and one synthesis run away.
 
 ## Files
