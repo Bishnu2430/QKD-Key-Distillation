@@ -133,6 +133,8 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `stages/01-syndrome-checker.md` | **Stage 1, complete**: full RTL, full testbench, every click | The rotation function `dbl[k +: Z]` — get it backwards and every layer mismatches |
 | `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core, plus the rotator-sharing optimisation in step 7 | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
 | `stages/03-iteration-loop.md` | **Stage 3, complete**: the check-message memory and the iteration loop | The compressed record (min1, min2, idx, one sign bit per edge) is a *lossless* encoding of every message a layer sent, in a quarter of the bits |
+| `stages/07-pipelined-walk.md` | **Stage 7**: the pipelined edge walk, one edge per clock | Two rotators again — in a pipeline the forward rotate of edge k+2 and the inverse rotate of edge k land in the same cycle, so stage 2's sharing has to be undone |
+| `stages/06-timing-fixes.md` | **Stage 6**: the block RAM output register and the rotator register, measured separately | A block RAM's output register only merges when two registers sit in series on the read path |
 | `stages/05-rate-masks.md` | **Stage 5, complete**: the loader, mask memory and key memory | The key stream is indexed by key position, not by variable — the key-column counter advances only on key columns |
 | `stages/04-early-termination.md` | **Stage 4, complete**: the syndrome check in the loop, status outputs, and the first clock constraint | The check must be its own pass over the edges — a layer's parity is only meaningful once every variable it touches has its final value for the iteration |
 
