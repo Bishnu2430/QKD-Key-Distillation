@@ -211,6 +211,7 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `stage2_layer_datapath/` | Bring-up stage 2: the arithmetic core, bit-exact per layer, 15,040 LUT — and the rotator-sharing before/after |
 | `stage3_iteration_loop/` | Bring-up stage 3: a decoded frame, bit-exact after 1, 3 and 6 iterations. 22,389 LUT, 72 BRAM tiles, of which 54 are the check-record memory |
 | `stage4_early_termination/` | Bring-up stage 4: all 20 frames match `ok`, `iterations` and every decoded bit. 18,836 LUT (35.4%), 70 BRAM tiles, 60.3 Mbit/s at 125 MHz |
+| `impl_decoder_unpipelined/` | **First implementation run**: fully routed, WNS −11.362 ns (Fmax 51.6 MHz), 1.036 W total / 0.912 W dynamic. The baseline the pipelined version is measured against |
 | `stage5_rate_masks/` | Bring-up stage 5: QBER 5% decoded at rate 0.628 by a code whose unmasked threshold is 4.04%. 19,964 LUT (37.5%), 72.5 BRAM tiles — **and the first timing number: WNS −9.196 ns, Fmax ≈ 58 MHz** |
 
 ---
