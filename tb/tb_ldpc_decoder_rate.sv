@@ -113,6 +113,7 @@ module tb_ldpc_decoder_rate;
         if (mask_cls[c] == 2'd0) begin
           @(negedge clk) rd_app_addr = c[ADDR_X-1:0];
           @(negedge clk);
+          @(negedge clk);          // NEW: the block RAM output register adds a cycle
           for (int j = 0; j < Z; j++) begin
             b = k*Z + j;
             if (rd_app_data[j*W_APP + W_APP - 1] !== xhat_words[b/64][b%64]) begin

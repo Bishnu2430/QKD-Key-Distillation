@@ -161,7 +161,8 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `layer_datapath.sv` | **Bring-up stage 2**: one layer of the decoder, first-iteration semantics | One lane rotator shared between the read and the write-back, which is why `S_B_WR` is split in two |
 | `ldpc_core.sv` | **Bring-up stage 3**: the check-record memory and the iteration loop | `cn_mem` is 154 × 3,840 bits and needs `ram_style = "block"`, or it becomes LUT RAM and eats the device |
 | `ldpc_decoder.sv` | **Bring-up stage 4**: the decoder, with early termination and status | The syndrome check is its own pass over the edges — a layer's parity only means something once the iteration is finished |
-| `ldpc_decoder_rate.sv` | **Bring-up stage 5**: the same decoder with the mask-aware loader | Punctured positions start at 0, shortened at +127, key positions at ±A — and only key columns consume key bits |
+| `ldpc_decoder_pipe.sv` | **Bring-up stage 7**: the pipelined decoder, one edge issued per clock | Two rotators, because the forward rotate of one edge and the inverse rotate of another now fall in the same cycle. The c4 arithmetic stage is the remaining critical path |
+| `ldpc_decoder_rate.sv` | **Bring-up stages 5 and 6**: the mask-aware loader, plus the block RAM and rotator output registers | Punctured positions start at 0, shortened at +127, key positions at ±A — and only key columns consume key bits |
 | `gen/*_params.svh` | Generated SystemVerilog parameters per code | `MAX_ROW_DEG` differs per code: 27 / 14 / 7. Size the CNU for 27 |
 | `gen/*_edges.mem` | Generated edge list, 2,048 words of `{shift, column}` | Read with `$readmemh` by bare filename |
 | `gen/*_layer_ptr.mem` | First edge index of each layer | 155 / 308 lines depending on the code |
@@ -213,6 +214,7 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `stage2_layer_datapath/` | Bring-up stage 2: the arithmetic core, bit-exact per layer, 15,040 LUT — and the rotator-sharing before/after |
 | `stage3_iteration_loop/` | Bring-up stage 3: a decoded frame, bit-exact after 1, 3 and 6 iterations. 22,389 LUT, 72 BRAM tiles, of which 54 are the check-record memory |
 | `stage4_early_termination/` | Bring-up stage 4: all 20 frames match `ok`, `iterations` and every decoded bit. 18,836 LUT (35.4%), 70 BRAM tiles, 60.3 Mbit/s at 125 MHz |
+| `stage7_pipelined_decoder/` | **Pipelined decoder, implemented**: 9,687 cycles an iteration, WNS −5.719 ns (72.9 MHz), 23.4 nJ/bit. Every worst path is the same arithmetic stage |
 | `impl_decoder_unpipelined/` | **First implementation run**: fully routed, WNS −11.362 ns (Fmax 51.6 MHz), 1.036 W total / 0.912 W dynamic. The baseline the pipelined version is measured against |
 | `stage5_rate_masks/` | Bring-up stage 5: QBER 5% decoded at rate 0.628 by a code whose unmasked threshold is 4.04%. 19,964 LUT (37.5%), 72.5 BRAM tiles — **and the first timing number: WNS −9.196 ns, Fmax ≈ 58 MHz** |
 

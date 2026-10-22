@@ -80,12 +80,12 @@ module ldpc_decoder_rate (
   // --------------------------------------------------------------- state
   typedef enum logic [4:0] {
     S_IDLE,
-    S_LD_ADDR, S_LD_WR,                   // NEW: the loader
+    S_LD_ADDR, S_LD_WR,
     S_CLEAR, S_L_START, S_SETUP,
-    S_A_ROM, S_A_MEM, S_A_ACC,
-    S_B_SETUP, S_B_ROM, S_B_MEM, S_B_ROT, S_B_WR,
+    S_A_ROM, S_A_MEM, S_A_WAIT, S_A_ROT, S_A_ACC,
+    S_B_SETUP, S_B_ROM, S_B_MEM, S_B_WAIT, S_B_ROT1, S_B_ARITH, S_B_ROT2, S_B_WR,
     S_L_END,
-    S_C_SETUP, S_C_ROM, S_C_MEM, S_C_ACC, S_C_CMP, S_C_END,
+    S_C_SETUP, S_C_ROM, S_C_MEM, S_C_WAIT, S_C_ROT, S_C_ACC, S_C_CMP, S_C_END,
     S_DONE
   } state_t;
 
@@ -171,7 +171,8 @@ module ldpc_decoder_rate (
 
   // ---------------------------------------------------- APP memory ports
   logic [ADDR_X-1:0] app_raddr;
-  logic [APP_W-1:0]  app_q;
+  logic [APP_W-1:0]  app_q1;      // NEW: the block RAM's internal output
+  logic [APP_W-1:0]  app_q;       // NEW: the optional output register, merged into the block
   logic              app_we;
   logic [ADDR_X-1:0] app_waddr;
   logic [APP_W-1:0]  app_wdata;
@@ -183,7 +184,7 @@ module ldpc_decoder_rate (
   logic [SHIFT_BITS-1:0] rot_amt;
 
   always_comb begin
-    if (state == S_B_WR) begin
+    if (state == S_B_ROT2) begin
       rot_in  = wb_q;
       rot_amt = (Z - shift_q) & (Z - 1);
     end else begin
@@ -192,6 +193,7 @@ module ldpc_decoder_rate (
     end
     rot_out = rot_lanes(rot_in, rot_amt);
   end
+
 
   // ------------------------------- NEW: the starting APP word for a column
   logic [APP_W-1:0] ld_word;
@@ -218,7 +220,7 @@ module ldpc_decoder_rate (
 
   always_comb begin
     for (int i = 0; i < Z; i++) begin
-      o_l   = rot_out[i*W_APP +: W_APP];
+      o_l   = rot_q[i*W_APP +: W_APP];
       o_vec = old_rec[i*CN_BITS + SGN_LO +: MAX_ROW_DEG];
       o_mag = (pos == old_rec[i*CN_BITS + IDX_LO +: IDX_BITS])
               ? {2'b00, old_rec[i*CN_BITS + MAG_BITS +: MAG_BITS]}
@@ -263,13 +265,14 @@ module ldpc_decoder_rate (
     end else begin
       app_we    = (state == S_B_WR);
       app_waddr = col_q;
-      app_wdata = rot_out;
+      app_wdata = rot_q;
     end
   end
 
   always_ff @(posedge clk) begin
     if (app_we) app_mem[app_waddr] <= app_wdata;
-    app_q <= app_mem[app_raddr];
+    app_q1 <= app_mem[app_raddr];
+    app_q  <= app_q1;
   end
 
   // ------------------------------------------------ check-record memory ports
@@ -299,6 +302,13 @@ module ldpc_decoder_rate (
   logic signed [W_APP-1:0] a_t;
   logic [W_APP-1:0]        a_m;
   logic [W_MSG:0]          a_a;
+  
+  // NEW: the rotator's output, registered. This is the cut that takes the state
+  // decode, the input multiplexer and all seven rotate stages off the path that
+  // ends at the minimum finder.
+  logic [APP_W-1:0] rot_q;
+
+  always_ff @(posedge clk) rot_q <= rot_out;
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
@@ -386,13 +396,17 @@ module ldpc_decoder_rate (
           end
         end
 
-        S_A_MEM: begin
+        S_A_MEM: begin                  // the read address is presented this cycle
           col_q   <= rom_q[COL_BITS-1:0];
           shift_q <= rom_q[EDGE_BITS-1:COL_BITS];
-          state   <= S_A_ACC;
+          state   <= S_A_WAIT;
         end
 
-        S_A_ACC: begin
+        S_A_WAIT: state <= S_A_ROT;     // app_q1 -> app_q, the block's own register
+
+        S_A_ROT:  state <= S_A_ACC;     // app_q -> rotate -> rot_q
+
+        S_A_ACC: begin                  // rot_q is valid, so t_lane is too
           for (int i = 0; i < Z; i++) begin
             a_t = t_lane[i];
             a_m = a_t[W_APP-1] ? (-a_t) : a_t;
@@ -430,15 +444,21 @@ module ldpc_decoder_rate (
         S_B_MEM: begin
           col_q   <= rom_q[COL_BITS-1:0];
           shift_q <= rom_q[EDGE_BITS-1:COL_BITS];
-          state   <= S_B_ROT;
+          state   <= S_B_WAIT;
         end
 
-        S_B_ROT: begin
+        S_B_WAIT:  state <= S_B_ROT1;   // app_q1 -> app_q
+
+        S_B_ROT1:  state <= S_B_ARITH;  // app_q -> rotate -> rot_q, in check order
+
+        S_B_ARITH: begin                // the lane arithmetic, from rot_q
           wb_q  <= new_word;
-          state <= S_B_WR;
+          state <= S_B_ROT2;
         end
 
-        S_B_WR: begin
+        S_B_ROT2:  state <= S_B_WR;     // wb_q -> rotate back -> rot_q, in column order
+
+        S_B_WR: begin                   // the memory writes rot_q this cycle
           e_idx <= e_idx + 1'b1;
           pos   <= pos + 1'b1;
           state <= S_B_ROM;
@@ -475,12 +495,16 @@ module ldpc_decoder_rate (
 
         S_C_MEM: begin
           shift_q <= rom_q[EDGE_BITS-1:COL_BITS];
-          state   <= S_C_ACC;
+          state   <= S_C_WAIT;
         end
+
+        S_C_WAIT: state <= S_C_ROT;     // app_q1 -> app_q
+
+        S_C_ROT:  state <= S_C_ACC;     // app_q -> rotate -> rot_q
 
         S_C_ACC: begin
           for (int i = 0; i < Z; i++)
-            par[i] <= par[i] ^ rot_out[i*W_APP + W_APP - 1];
+            par[i] <= par[i] ^ rot_q[i*W_APP + W_APP - 1];
           e_idx <= e_idx + 1'b1;
           state <= S_C_ROM;
         end
