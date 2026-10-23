@@ -67,6 +67,7 @@ Each writes into `results/` with a header recording the commit, parameters and s
 | File | Experiment | Focus point |
 |---|---|---|
 | `sweep_e1.py` | E1: FER and efficiency against QBER | The first sweep that showed a fixed-rate code leaking 4.3× the minimum at 1% QBER |
+| `sweep_e3.py` | E3: the mask rate and I_max against throughput, latency, energy and secret key rate | Puts the model's iteration counts through the *implemented* decoder's cycle model, so the throughput column describes real hardware |
 | `sweep_c1.py` | C1: which mask covers which QBER | Selects the lowest-leakage mask meeting a FER target — the choice the PS makes at run time |
 | `probe_puncturing.py` | Does puncturing high-degree columns help? | It helps inside a 10% budget and backfires beyond it |
 | `sweep_e2.py` | E2: quantisation study | Compares every fixed-point configuration against the float model on identical frames |
@@ -133,6 +134,11 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `stages/01-syndrome-checker.md` | **Stage 1, complete**: full RTL, full testbench, every click | The rotation function `dbl[k +: Z]` — get it backwards and every layer mismatches |
 | `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core, plus the rotator-sharing optimisation in step 7 | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
 | `stages/03-iteration-loop.md` | **Stage 3, complete**: the check-message memory and the iteration loop | The compressed record (min1, min2, idx, one sign bit per edge) is a *lossless* encoding of every message a layer sent, in a quarter of the bits |
+| `stages/10-other-codes.md` | **Stage 10**: swap the code, measure what changes | Four lines change; everything else derives from the generated header. r850's degree 27 is the timing risk |
+| `stages/09-power-saif.md` | **Stage 9**: capture switching activity from the implemented netlist and report power from it | `Simulation Activity File ---` in a power report means Vivado guessed the toggle rates |
+| `stages/08-split-arithmetic.md` | **Stage 8**: R_old reconstructed beside the rotate, T registered | Everything `pos` feeds can be computed a cycle early — the record and the syndrome are fixed for the whole layer |
+| `stages/07-pipelined-walk.md` | **Stage 7**: the pipelined edge walk, one edge per clock | Two rotators again — in a pipeline the forward rotate of edge k+2 and the inverse rotate of edge k land in the same cycle, so stage 2's sharing has to be undone |
+| `stages/06-timing-fixes.md` | **Stage 6**: the block RAM output register and the rotator register, measured separately | A block RAM's output register only merges when two registers sit in series on the read path |
 | `stages/05-rate-masks.md` | **Stage 5, complete**: the loader, mask memory and key memory | The key stream is indexed by key position, not by variable — the key-column counter advances only on key columns |
 | `stages/04-early-termination.md` | **Stage 4, complete**: the syndrome check in the loop, status outputs, and the first clock constraint | The check must be its own pass over the edges — a layer's parity is only meaningful once every variable it touches has its final value for the iteration |
 
@@ -159,7 +165,9 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `layer_datapath.sv` | **Bring-up stage 2**: one layer of the decoder, first-iteration semantics | One lane rotator shared between the read and the write-back, which is why `S_B_WR` is split in two |
 | `ldpc_core.sv` | **Bring-up stage 3**: the check-record memory and the iteration loop | `cn_mem` is 154 × 3,840 bits and needs `ram_style = "block"`, or it becomes LUT RAM and eats the device |
 | `ldpc_decoder.sv` | **Bring-up stage 4**: the decoder, with early termination and status | The syndrome check is its own pass over the edges — a layer's parity only means something once the iteration is finished |
-| `ldpc_decoder_rate.sv` | **Bring-up stage 5**: the same decoder with the mask-aware loader | Punctured positions start at 0, shortened at +127, key positions at ±A — and only key columns consume key bits |
+| `ldpc_decoder_deep.sv` | **Bring-up stage 8**: the arithmetic stage split in three. The version that meets 125 MHz | R_old is reconstructed beside the rotate, not after it, because the record and the syndrome are fixed for the whole layer |
+| `ldpc_decoder_pipe.sv` | **Bring-up stage 7**: the pipelined decoder, one edge issued per clock | Two rotators, because the forward rotate of one edge and the inverse rotate of another now fall in the same cycle. The c4 arithmetic stage is the remaining critical path |
+| `ldpc_decoder_rate.sv` | **Bring-up stages 5 and 6**: the mask-aware loader, plus the block RAM and rotator output registers | Punctured positions start at 0, shortened at +127, key positions at ±A — and only key columns consume key bits |
 | `gen/*_params.svh` | Generated SystemVerilog parameters per code | `MAX_ROW_DEG` differs per code: 27 / 14 / 7. Size the CNU for 27 |
 | `gen/*_edges.mem` | Generated edge list, 2,048 words of `{shift, column}` | Read with `$readmemh` by bare filename |
 | `gen/*_layer_ptr.mem` | First edge index of each layer | 155 / 308 lines depending on the code |
@@ -204,6 +212,9 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `c1_rate_adaptation/` | The 10% puncture budget, and the high-degree puncturing probe |
 | `e2_quantisation/` | Word widths: 6-bit messages and 7–8-bit APP are the cliff edge |
 | `bench_decoder/` | Numba speed-up and the cost of a 10⁵-frame point |
+| `stage10_other_codes/` | The same RTL on r850 (degree 27): functionally exact with four lines changed, 71% BRAM, and timing short by 40 ps on the layer-pointer ROM path |
+| `power_saif/` | **Power, measured**: 0.952 W dynamic at High confidence, 9.13 nJ/bit at Q=3%. Block RAM power turned out *lower* than estimated, clock power two thirds higher |
+| `e3_throughput_tradeoff/` | E3: REQ-PERF-04 is met at a mask without puncturing (71.6 Mbit/s at Q=5%), and the secret-key optimum sits 1–2 mask steps below the efficiency optimum |
 | `e5_key_rate/` | Key rate against distance; efficiency decides maximum range |
 | `m3_code_design/`, `_v2/`, `_v3/` | The three code-design passes; `_v3/README.md` tells the whole story |
 | `m3_margin_1.05/`, `_1.10/` | Efficiency against iterations trade-off |
@@ -211,6 +222,9 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `stage2_layer_datapath/` | Bring-up stage 2: the arithmetic core, bit-exact per layer, 15,040 LUT — and the rotator-sharing before/after |
 | `stage3_iteration_loop/` | Bring-up stage 3: a decoded frame, bit-exact after 1, 3 and 6 iterations. 22,389 LUT, 72 BRAM tiles, of which 54 are the check-record memory |
 | `stage4_early_termination/` | Bring-up stage 4: all 20 frames match `ok`, `iterations` and every decoded bit. 18,836 LUT (35.4%), 70 BRAM tiles, 60.3 Mbit/s at 125 MHz |
+| `stage8_deep_pipeline/` | **Timing closed**: WNS +0.081 ns at 125 MHz, 22,921 LUT, 0.917 W, 10,149 cycles an iteration. The whole pipelining study in one table |
+| `stage7_pipelined_decoder/` | **Pipelined decoder, implemented**: 9,687 cycles an iteration, WNS −5.719 ns (72.9 MHz), 23.4 nJ/bit. Every worst path is the same arithmetic stage |
+| `impl_decoder_unpipelined/` | **First implementation run**: fully routed, WNS −11.362 ns (Fmax 51.6 MHz), 1.036 W total / 0.912 W dynamic. The baseline the pipelined version is measured against |
 | `stage5_rate_masks/` | Bring-up stage 5: QBER 5% decoded at rate 0.628 by a code whose unmasked threshold is 4.04%. 19,964 LUT (37.5%), 72.5 BRAM tiles — **and the first timing number: WNS −9.196 ns, Fmax ≈ 58 MHz** |
 
 ---

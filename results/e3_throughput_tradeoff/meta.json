@@ -1,0 +1,16 @@
+{
+  "generated": "2026-10-23",
+  "commit": "5f72c69",
+  "code": "codes/v3_mother_1_r700.npz",
+  "frames_per_point": 40,
+  "seed": 11,
+  "hardware_model": {
+    "source": "results/stage8_deep_pipeline",
+    "cycles_per_iteration": 10149,
+    "cycles_fixed_per_frame": 1181,
+    "f_clk_hz": 125000000.0,
+    "dynamic_power_w": 0.917,
+    "power_is_vectorless": true
+  },
+  "command": "scripts/sweep_e3.py --frames 40 --out results/e3_throughput_tradeoff"
+}

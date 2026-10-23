@@ -1,0 +1,45 @@
+{
+  "generated": "2026-10-23",
+  "commit": "a42bf28",
+  "source_code_file": "codes/v3_mother_0_r850.npz",
+  "code": {
+    "n": 65536,
+    "m": 9856,
+    "z": 128,
+    "n_b": 512,
+    "m_b": 77,
+    "rate0": 0.8496,
+    "edges_base": 2048
+  },
+  "mask": {
+    "punctured_cols": 16,
+    "shorten_cols": 32,
+    "p": 2048,
+    "s": 4096,
+    "n_key": 59392,
+    "rate": 0.8685
+  },
+  "fixed_point": {
+    "w_ch": 5,
+    "w_msg": 6,
+    "w_app": 8,
+    "delta": 0.25,
+    "alpha": 0.75,
+    "alpha_shifts": [
+      1,
+      2
+    ]
+  },
+  "decoder": {
+    "max_iters": 32,
+    "channel_amplitude": 15
+  },
+  "channel": {
+    "qber": 0.01,
+    "qber_est": 0.01
+  },
+  "frames": 20,
+  "seed": 7,
+  "bit_order": "LSB-first within each 64-bit word (spec section 2)",
+  "command": "scripts/export_test_vectors.py --code codes/v3_mother_0_r850.npz --qber 0.01 --frames 20 --puncture-cols 16 --shorten-cols 32 --max-iters 32 --out tv/r850_q01_m16s32"
+}

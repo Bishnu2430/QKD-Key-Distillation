@@ -1,0 +1,16 @@
+Time resolution is 1 ps
+vectors: D:/QKD-Key-Distillation/tv/r700_q03_m16s32/
+mask: 464 key columns, 59392 key bits
+frame 0: ok=1 iters=7 (expected ok=1 iters=7), 67964 cycles
+frame 1: ok=1 iters=7 (expected ok=1 iters=7), 67964 cycles
+frame 2: ok=1 iters=7 (expected ok=1 iters=7), 67964 cycles
+frame 3: ok=1 iters=6 (expected ok=1 iters=6), 58277 cycles
+frame 4: ok=1 iters=7 (expected ok=1 iters=7), 67964 cycles
+frame 5: ok=1 iters=7 (expected ok=1 iters=7), 67964 cycles
+frame 6: ok=1 iters=7 (expected ok=1 iters=7), 67964 cycles
+frame 7: ok=1 iters=6 (expected ok=1 iters=6), 58277 cycles
+frame 8: ok=1 iters=6 (expected ok=1 iters=6), 58277 cycles
+frame 9: ok=1 iters=7 (expected ok=1 iters=7), 67964 cycles
+STAGE 7 PASSED
+$finish called at time : 5452056 ns : File "D:/QKD-Key-Distillation/tb/tb_ldpc_decoder_pipe.sv" Line 194
+INFO: xsimkernel Simulation Memory Usage: 21476 KB (Peak: 21476 KB), Simulation CPU Usage: 39124 ms

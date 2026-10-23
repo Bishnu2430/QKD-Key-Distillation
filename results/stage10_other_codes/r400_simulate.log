@@ -1,0 +1,9 @@
+Time resolution is 1 ps
+vectors: D:/QKD-Key-Distillation/tv/r400_q08_m16s32/
+mask: 464 key columns, 59392 key bits
+frame 0: ok=1 iters=5 (expected ok=1 iters=5), 70943 cycles
+frame 1: ok=1 iters=6 (expected ok=1 iters=6), 85070 cycles
+frame 2: ok=1 iters=6 (expected ok=1 iters=6), 85070 cycles
+frame 3: ok=1 iters=6 (expected ok=1 iters=6), 85070 cycles
+STAGE 8 PASSED
+$finish called at time : 2715576 ns : File "D:/QKD-Key-Distillation/tb/tb_ldpc_decoder_deep.sv" Line 193
