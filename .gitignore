@@ -40,3 +40,6 @@ docs/stages/
 docs/blocks/
 docs/decisions/
 docs/log/
+
+# Switching-activity dumps: large, regenerable from a netlist simulation
+*.saif
