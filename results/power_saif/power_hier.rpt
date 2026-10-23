@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version     : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
-| Date             : Fri Oct 23 18:05:48 2026
+| Date             : Fri Oct 23 20:00:25 2026
 | Host             : hp running 64-bit major release  (build 9200)
 | Command          : report_power -hierarchical_depth 3 -file D:/QKD-Key-Distillation/results/power_saif/power_hier.rpt
 | Design           : ldpc_decoder_deep
@@ -29,20 +29,20 @@ Table of Contents
 1. Summary
 ----------
 
-+--------------------------+--------------+
-| Total On-Chip Power (W)  | 1.041        |
-| Design Power Budget (W)  | Unspecified* |
-| Power Budget Margin (W)  | NA           |
-| Dynamic (W)              | 0.917        |
-| Device Static (W)        | 0.124        |
-| Effective TJA (C/W)      | 11.5         |
-| Max Ambient (C)          | 73.0         |
-| Junction Temperature (C) | 37.0         |
-| Confidence Level         | Medium       |
-| Setting File             | ---          |
-| Simulation Activity File | ---          |
-| Design Nets Matched      | NA           |
-+--------------------------+--------------+
++--------------------------+---------------------------------------------------------------+
+| Total On-Chip Power (W)  | 1.077                                                         |
+| Design Power Budget (W)  | Unspecified*                                                  |
+| Power Budget Margin (W)  | NA                                                            |
+| Dynamic (W)              | 0.952                                                         |
+| Device Static (W)        | 0.125                                                         |
+| Effective TJA (C/W)      | 11.5                                                          |
+| Max Ambient (C)          | 72.6                                                          |
+| Junction Temperature (C) | 37.4                                                          |
+| Confidence Level         | High                                                          |
+| Setting File             | ---                                                           |
+| Simulation Activity File | D:/QKD-Key-Distillation/results/power_saif/decoder_clean.saif |
+| Design Nets Matched      | 47%   (23810/50632)                                           |
++--------------------------+---------------------------------------------------------------+
 * Specify Design Power Budget using, set_operating_conditions -design_power_budget <value in Watts>
 
 
@@ -52,19 +52,19 @@ Table of Contents
 +--------------------------+-----------+----------+-----------+-----------------+
 | On-Chip                  | Power (W) | Used     | Available | Utilization (%) |
 +--------------------------+-----------+----------+-----------+-----------------+
-| Clocks                   |     0.054 |        3 |       --- |             --- |
-| Slice Logic              |     0.216 |    42196 |       --- |             --- |
-|   LUT as Logic           |     0.202 |    22392 |     53200 |           42.09 |
+| Clocks                   |     0.055 |        3 |       --- |             --- |
+| Slice Logic              |     0.236 |    42196 |       --- |             --- |
+|   LUT as Logic           |     0.227 |    22392 |     53200 |           42.09 |
 |   CARRY4                 |     0.006 |     1040 |     13300 |            7.82 |
-|   Register               |     0.006 |    14475 |    106400 |           13.60 |
+|   Register               |     0.003 |    14475 |    106400 |           13.60 |
+|   LUT as Shift Register  |    <0.001 |       13 |     17400 |            0.07 |
 |   LUT as Distributed RAM |    <0.001 |      516 |     17400 |            2.97 |
 |   F7/F8 Muxes            |    <0.001 |      128 |     53200 |            0.24 |
-|   LUT as Shift Register  |    <0.001 |       13 |     17400 |            0.07 |
 |   Others                 |     0.000 |        4 |       --- |             --- |
-| Signals                  |     0.316 |    37413 |       --- |             --- |
-| Block RAM                |     0.331 |     72.5 |       140 |           51.79 |
-| Static Power             |     0.124 |          |           |                 |
-| Total                    |     1.041 |          |           |                 |
+| Signals                  |     0.371 |    37413 |       --- |             --- |
+| Block RAM                |     0.289 |     72.5 |       140 |           51.79 |
+| Static Power             |     0.125 |          |           |                 |
+| Total                    |     1.077 |          |           |                 |
 +--------------------------+-----------+----------+-----------+-----------------+
 
 
@@ -74,7 +74,7 @@ Table of Contents
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
 | Source    | Voltage (V) | Total (A) | Dynamic (A) | Static (A) | Powerup (A) | Budget (A)  | Margin (A) |
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
-| Vccint    |       1.000 |     0.920 |       0.907 |      0.013 |       NA    | Unspecified | NA         |
+| Vccint    |       1.000 |     0.957 |       0.944 |      0.013 |       NA    | Unspecified | NA         |
 | Vccaux    |       1.800 |     0.013 |       0.000 |      0.013 |       NA    | Unspecified | NA         |
 | Vcco33    |       3.300 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vcco25    |       2.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
@@ -83,11 +83,11 @@ Table of Contents
 | Vcco135   |       1.350 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vcco12    |       1.200 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vccaux_io |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
-| Vccbram   |       1.000 |     0.014 |       0.009 |      0.004 |       NA    | Unspecified | NA         |
+| Vccbram   |       1.000 |     0.012 |       0.008 |      0.004 |       NA    | Unspecified | NA         |
 | MGTAVcc   |       1.000 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | MGTAVtt   |       1.200 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | MGTVccaux |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
-| Vccpint   |       1.000 |     0.023 |       0.000 |      0.023 |       NA    | Unspecified | NA         |
+| Vccpint   |       1.000 |     0.024 |       0.000 |      0.024 |       NA    | Unspecified | NA         |
 | Vccpaux   |       1.800 |     0.010 |       0.000 |      0.010 |       NA    | Unspecified | NA         |
 | Vccpll    |       1.800 |     0.003 |       0.000 |      0.003 |       NA    | Unspecified | NA         |
 | Vcco_ddr  |       1.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
@@ -100,17 +100,17 @@ Table of Contents
 1.3 Confidence Level
 --------------------
 
-+-----------------------------+------------+------------------------------------------------+------------------------------------------------------------------------------------------------------------+
-| User Input Data             | Confidence | Details                                        | Action                                                                                                     |
-+-----------------------------+------------+------------------------------------------------+------------------------------------------------------------------------------------------------------------+
-| Design implementation state | High       | Design is routed                               |                                                                                                            |
-| Clock nodes activity        | High       | User specified more than 95% of clocks         |                                                                                                            |
-| I/O nodes activity          | High       | User specified more than 95% of inputs         |                                                                                                            |
-| Internal nodes activity     | Medium     | User specified less than 25% of internal nodes | Provide missing internal nodes activity with simulation results or by editing the "By Resource Type" views |
-| Device models               | High       | Device models are Production                   |                                                                                                            |
-|                             |            |                                                |                                                                                                            |
-| Overall confidence level    | Medium     |                                                |                                                                                                            |
-+-----------------------------+------------+------------------------------------------------+------------------------------------------------------------------------------------------------------------+
++-----------------------------+------------+------------------------------------------------+--------+
+| User Input Data             | Confidence | Details                                        | Action |
++-----------------------------+------------+------------------------------------------------+--------+
+| Design implementation state | High       | Design is routed                               |        |
+| Clock nodes activity        | High       | User specified more than 95% of clocks         |        |
+| I/O nodes activity          | High       | User specified more than 95% of inputs         |        |
+| Internal nodes activity     | High       | User specified more than 25% of internal nodes |        |
+| Device models               | High       | Device models are Production                   |        |
+|                             |            |                                                |        |
+| Overall confidence level    | High       |                                                |        |
++-----------------------------+------------+------------------------------------------------+--------+
 
 
 2. Settings
@@ -150,7 +150,7 @@ Table of Contents
 +-------------------+-----------+
 | Name              | Power (W) |
 +-------------------+-----------+
-| ldpc_decoder_deep |     0.917 |
+| ldpc_decoder_deep |     0.952 |
 +-------------------+-----------+
 
 

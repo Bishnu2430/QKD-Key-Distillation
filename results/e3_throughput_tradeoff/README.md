@@ -8,7 +8,9 @@
 | Reproduce | `uv run python scripts/sweep_e3.py --frames 40` |
 | Requirements | REQ-PERF-04 (throughput), REQ-PERF-05 (latency), REQ-FUN-04 (I_max) |
 
-Throughput and energy come from the model's iteration counts put through the measured cycle model, so they describe the decoder that exists. The power figure behind the energy column is still the vectorless estimate ([stage 9](../../docs/stages/09-power-saif.md) replaces it).
+Throughput and energy come from the model's iteration counts put through the measured cycle model, so they describe the decoder that exists.
+
+> **The nJ/bit column is 3.8% optimistic.** It was computed at 0.917 W, the vectorless estimate; [stage 9](../power_saif/README.md) has since measured 0.952 W. Multiply the energy column by 1.038 — no conclusion here changes, since the comparison between operating points is unaffected.
 
 ## 1. REQ-PERF-04 is met — at a mask we had not been using
 

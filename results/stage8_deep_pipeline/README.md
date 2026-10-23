@@ -68,7 +68,7 @@ The new registers are `rold_q` (128 × 10 bits), `t_q` (128 × 8), `nrm_q` (128 
 
 ## Requirements, after stage 8
 
-Energy per cycle is 0.917 W ÷ 125 MHz = 7.34 nJ.
+Energy per cycle is 0.917 W ÷ 125 MHz = 7.34 nJ. **Superseded:** [stage 9](../power_saif/README.md) measured 0.952 W, so the real figure is 7.62 nJ and the energy numbers below are 3.8% optimistic.
 
 | | Target | Measured | |
 |---|---|---|---|
