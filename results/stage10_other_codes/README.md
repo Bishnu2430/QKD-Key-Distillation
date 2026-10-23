@@ -208,6 +208,43 @@ A zero-power alternative exists for `syn_mem`: keep it in block RAM and add one 
 
 **The structural fix is `cn_mem`.** Chunked to eight lanes per entry it goes from 78.5 tiles to about 20 on r850, 39.5 to 12 on r400, 54 to 21 on r700 — which takes block RAM from 71% to 29% at the worst end, cuts the largest contributor to dynamic power, and frees 30–60 tiles for M4 and M6. That is now the highest-value remaining change to the decoder.
 
+## All three codes with the attributes in place
+
+| | r850 | r700 | r400 |
+|---|---|---|---|
+| QBER / rate | 1% / 0.869 | 5% / 0.628 | 8% / 0.373 |
+| Row degree | 27 | 14 | 7 |
+| **WNS** | **−0.094 ns**, 2 failing | **+0.061 ns** | **+0.092 ns** |
+| Implied Fmax | 123.5 MHz | 126.0 MHz | 126.2 MHz |
+| Slice LUTs | 24,032 (45.2%) | 22,817 (42.9%) | 23,300 (43.8%) |
+| Slice registers | 17,991 | 14,552 | 12,588 |
+| Slices occupied | 8,340 (62.7%) | 7,318 (55.0%) | 6,946 (52.2%) |
+| Block RAM tiles | 96.5 (68.9%) | 71.5 (51.1%) | 57.5 (41.1%) |
+| Dynamic power, vectorless | 1.061 W | 1.093 W | 0.988 W |
+| Cycles per iteration | 8,147 | 10,149 | 14,127 |
+| Functional | ✅ | ✅ | ✅ |
+
+**r700 and r400 meet timing; r850 misses by 0.094 ns and runs at 123.5 MHz.**
+
+### The ROM fix worked; r850 moved its bottleneck
+
+`e_end_reg` appears **zero times** in r850's timing report now, where before it held the two tightest paths. What replaced it is a different path entirely:
+
+```
+app_mem_reg_4/CLKARDCLK → rot_q_reg[205]/D
+8.039 ns — logic 1.378 ns (17%), route 6.661 ns (83%), 4 logic levels
+```
+
+Four logic levels and 6.7 nanoseconds of wire. r850 is not failing on any one path: **it is congestion-bound.** 62.7% of slices, 69% of block RAM, and every top path sitting in the 7.9–8.1 ns band with 80–94% of the delay in routing. Fix one and the placer rearranges and exposes the next. That is a design that needs less area, not more pipelining.
+
+### Vectorless power is not comparable across runs
+
+r700's dynamic power reads 1.093 W here against 0.917 W for the same logic in the stage-8 build, and r850's *fell* from 1.245 W to 1.061 W. The designs barely changed; the placements did. Looking at the components, r700's signals went 0.330 → 0.420 W and its slice logic 0.220 → 0.287 W — net capacitance, not switching.
+
+**So vectorless power varies by roughly ±20% with placement, and only SAIF-based figures are comparable.** The project has exactly one of those: 0.952 W, measured on the stage-8 r700 build. Whether the current builds are better or worse is not knowable without re-capturing, which is worth doing once the design is final.
+
+> **Note on the reports.** The r850 post-fix run was read but not copied before the r700 run overwrote `impl_1`, so only its numbers survive, above. Copy each run's reports into `results/` before starting the next one.
+
 ## Where this leaves the claim
 
 | | r850 | r700 | r400 |
@@ -216,7 +253,7 @@ A zero-power alternative exists for `syn_mem`: keep it in block RAM and add one 
 | Row degree | 27 | 14 | 7 |
 | Functional, unmodified RTL | ✅ | ✅ | ✅ |
 | Cycles per iteration | 8,147 | 10,149 | 14,127 |
-| Timing at 125 MHz | ❌ −0.040 ns → fix pending | ✅ +0.081 ns | ✅ **+0.092 ns** with the fix |
+| Timing at 125 MHz | ⚠️ 123.5 MHz, congestion-bound | ✅ +0.061 ns | ✅ +0.092 ns |
 | Slice LUTs | 44.2% | 43.1% | 41.0% |
 | Block RAM | **71.1%** | 51.8% | 43.2% |
 | Dynamic power | ❌ 1.245 W est. | ✅ 0.952 W meas. | ⚠️ 0.941 W est. |
