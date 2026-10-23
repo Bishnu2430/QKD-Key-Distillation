@@ -93,14 +93,91 @@ Most of the extra is the block RAM — 0.442 W for 99.5 tiles against 0.289 W fo
 
 Energy per bit is unaffected by the power problem, because r850 runs at Q = 1% where frames decode in 7 iterations: 57,107 cycles × 9.96 nJ ÷ 59,392 bits = **9.58 nJ/bit**, which still meets the ≤10 stretch target.
 
+## r400 — Q = 8%, row degree 7, 307 layers
+
+### Functionally: exact, again
+
+```
+frame 0: ok=1 iters=5 (expected ok=1 iters=5), 70943 cycles
+frame 3: ok=1 iters=6 (expected ok=1 iters=6), 85070 cycles
+STAGE 8 PASSED
+```
+
+Cycle-for-cycle with the Verilator pre-run, as r850 was.
+
+### Resources: the cheapest of the three
+
+| | r850 | r700 | **r400** |
+|---|---|---|---|
+| Slice LUTs | 23,497 (44.2%) | 22,921 (43.1%) | **21,809 (41.0%)** |
+| Slice registers | 17,857 | 14,475 | **12,708** |
+| Slices occupied | 8,180 (61.5%) | 7,279 (54.7%) | 6,766 (50.9%) |
+| Block RAM tiles | 99.5 (71.1%) | 72.5 (51.8%) | **60.5 (43.2%)** |
+
+Resources track row degree exactly as the architecture predicts: degree 7 narrows every per-lane multiplexer and shrinks the check record to 22 bits, so r400 is smaller than r700 on every axis despite having twice the layers. `cn_mem` at 307 × 2,816 bits is also better shaped — 39.5 tiles for 864,512 bits, against r850's 78.5 tiles for 433,664.
+
+### Timing: fails by 0.042 ns, and it is the same disease
+
+```
+WNS -0.042 ns    TNS -0.070 ns    2 failing endpoints of 29,657
+
+Source:       syn_mem_reg_0/CLKARDCLK   (a RAMB36 clock pin)
+Destination:  wb_q_reg[118]/D
+7.989 ns — logic 4.020 ns (50%), route 3.969 ns (50%), 6 logic levels
+```
+
+**Six of the eight worst paths start at `syn_mem_reg_*/CLKARDCLK`.** The syndrome memory went into block RAM, so `syn_q` is a RAMB36 output register with a 2.45 ns clock-to-out, and the sign XOR, the negate and the saturating add that produce `wb_q` have 5.5 ns left.
+
+Power is 0.941 W dynamic, vectorless — which passes, but only just, and r700's calibration says a measured figure would be a few percent worse.
+
+## The two failures are one bug
+
+| Code | Memory Vivado chose | Signal | What follows it in the same cycle |
+|---|---|---|---|
+| r850 | `layer_ptr_rom` → RAMB36 | `e_end` | `e_idx == e_end` → state enable, 5 levels |
+| r400 | `syn_mem` → RAMB36 | `syn_q` | sign XOR → negate → saturating add → `wb_q`, 6 levels |
+| r700 | `syn_mem` → **LUT RAM**, `layer_ptr_rom` → RAMB36 but not critical | — | — |
+
+Both failures are a **block RAM's 2.45 ns clock-to-out spending a third of the clock period before a long combinational chain**, on a signal that is then held constant for the whole layer. And r700 escapes by luck: at 154 entries Vivado chose distributed RAM for its syndrome memory, where at 77 and 307 entries it chose block RAM.
+
+That is the real lesson, and it belongs in the write-up: **the same RTL meets timing for one code and misses for another because inference picked a different memory primitive.** A timing-critical read should never be left to a heuristic that varies with array depth.
+
+### The fix: pin both memories
+
+```systemverilog
+  (* ram_style = "distributed" *)
+  logic [Z-1:0]          syn_mem  [M_B];
+```
+
+```systemverilog
+  (* rom_style = "distributed" *)
+  logic [15:0]           layer_ptr_rom [M_B+1];
+```
+
+Both become LUT-based, so `syn_q` and `e_end` become ordinary fabric flops with a 0.4 ns clock-to-out instead of 2.45 — about **2 ns recovered on each path class**, against deficits of 0.040 and 0.042 ns.
+
+| Code | `syn_mem` as LUT RAM | ROM as LUTs | Block RAM freed |
+|---|---|---|---|
+| r850 (77 layers) | ~256 LUTs | ~32 | 2 tiles |
+| r700 (154) | already there | ~48 | 0 |
+| r400 (307) | ~640 LUTs | ~80 | 2 tiles |
+
+LUT utilisation stays under 45% for all three, and r850 gets two of its scarce tiles back. `edge_rom` (2,048 × 16 bits) and `cn_mem` stay in block RAM, where they belong — `cn_mem` already carries `ram_style = "block"` for exactly this reason.
+
 ## Where this leaves the claim
 
 | | r850 | r700 | r400 |
 |---|---|---|---|
-| Functional, unmodified RTL | ✅ | ✅ | pending |
-| Timing at 125 MHz | ❌ −0.040 ns, one endpoint | ✅ +0.081 ns | pending |
-| Resources | 44% LUT, **71% BRAM** | 43% LUT, 52% BRAM | pending |
-| Power | ❌ 1.245 W estimated | ✅ 0.952 W measured | pending |
+| QBER / rate | 1% / 0.869 | 5% / 0.628 | 8% / 0.373 |
+| Row degree | 27 | 14 | 7 |
+| Functional, unmodified RTL | ✅ | ✅ | ✅ |
+| Cycles per iteration | 8,147 | 10,149 | 14,127 |
+| Timing at 125 MHz | ❌ −0.040 ns, 1 endpoint | ✅ +0.081 ns | ❌ −0.042 ns, 2 endpoints |
+| Slice LUTs | 44.2% | 43.1% | 41.0% |
+| Block RAM | **71.1%** | 51.8% | 43.2% |
+| Dynamic power | ❌ 1.245 W est. | ✅ 0.952 W meas. | ⚠️ 0.941 W est. |
+
+Both timing failures have one cause and one two-line fix, described above. After it, all three codes are expected to close.
 
 **One datapath does serve every rate**, in the sense that matters most: no RTL change, bit-exact results, across QBER 1–8% and rate 0.87–0.37. What the high-rate end costs is 27 more block RAM tiles, 0.3 W, and — until the ROM attribute is applied — 40 picoseconds.
 
