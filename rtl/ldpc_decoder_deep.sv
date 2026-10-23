@@ -1,5 +1,5 @@
 `default_nettype none
-`include "v3_mother_1_r700_params.svh"
+`include "v3_mother_2_r400_params.svh"
 
 // Stage 7: the same decoder, one edge per clock.
 //
@@ -169,10 +169,24 @@ module ldpc_decoder_deep (
 
   // --------------------------------------------------------------- memories
   logic [APP_W-1:0]      app_mem  [N_B];
+
+  // Small and on a critical path: syn_q and e_end must be ordinary fabric
+  // flops, not block RAM output registers. A RAMB36 spends 2.45 ns of the
+  // 8 ns period getting its data out, and both of these feed long
+  // combinational chains in the cycle after the read. Left to inference this
+  // varies with the array depth, which is why r700 closed timing and r850 and
+  // r400 did not.
+  (* ram_style = "distributed" *)
   logic [Z-1:0]          syn_mem  [M_B];
+
   logic [EDGE_BITS-1:0]  edge_rom [N_EDGES];
+
+  (* rom_style = "distributed" *)
   logic [15:0]           layer_ptr_rom [M_B+1];
 
+  // Large and read once per layer: the opposite case. 433,664 to 864,512 bits
+  // depending on the code, which would be ruinous as LUT RAM, and its latency
+  // is never on a critical path.
   (* ram_style = "block" *)
   logic [CN_W-1:0]       cn_mem   [M_B];
 
@@ -181,8 +195,8 @@ module ldpc_decoder_deep (
   logic [Z-1:0]          key_q;
 
   initial begin
-    $readmemh("v3_mother_1_r700_edges.mem",     edge_rom);
-    $readmemh("v3_mother_1_r700_layer_ptr.mem", layer_ptr_rom);
+    $readmemh("v3_mother_2_r400_edges.mem",     edge_rom);
+    $readmemh("v3_mother_2_r400_layer_ptr.mem", layer_ptr_rom);
   end
 
   always_ff @(posedge clk) begin

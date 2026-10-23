@@ -164,6 +164,50 @@ Both become LUT-based, so `syn_q` and `e_end` become ordinary fabric flops with 
 
 LUT utilisation stays under 45% for all three, and r850 gets two of its scarce tiles back. `edge_rom` (2,048 × 16 bits) and `cn_mem` stay in block RAM, where they belong — `cn_mem` already carries `ram_style = "block"` for exactly this reason.
 
+## The fix, measured on r400
+
+Both attributes applied, re-synthesised and re-implemented:
+
+| r400 | Before | **After** | Change |
+|---|---|---|---|
+| WNS | −0.042 ns, 2 failing | **+0.092 ns, 0 failing** | **+0.134 ns** |
+| Slice LUTs | 21,809 (41.0%) | 23,300 (43.8%) | +1,491 |
+| — as distributed RAM | 12 | 872 | `syn_mem` moved here |
+| Slice registers | 12,708 | 12,588 | −120 |
+| Block RAM tiles | 60.5 | **57.5** | −3 |
+| Dynamic power | 0.941 W | **0.988 W** | +0.047 W |
+
+It works, and it costs more than predicted: +1,491 LUTs against an estimated 720, because the address decode around a 307-deep distributed RAM costs more than the storage. The new critical path is `layer_q` → `cn_mem`'s address pins — **zero logic levels, 94% routing** — the layer counter crossing the die to 39 block RAM tiles.
+
+### Power is now the binding constraint, at both ends
+
+| | r850 | r700 | r400 (fixed) |
+|---|---|---|---|
+| Dynamic power | 1.245 W est. | 0.952 W measured | **0.988 W est.** |
+| REQ-PERF-06 (≤1.0 W) | ❌ by 25% | ✅ | ⚠️ 1.2% under, on an estimate that read 3.8% low for r700 |
+
+r400 has gone from comfortable to marginal, and a SAIF measurement would probably put it just over. Timing is solved; power is not.
+
+### What r850 needs
+
+Its two tightest paths both start at `e_end_reg` — the layer-pointer ROM — so **`rom_style = "distributed"` alone should close it**, worth about 2 ns against a 0.040 ns deficit, for roughly 32 LUTs.
+
+The `syn_mem` attribute is optional there. It would free 2 of r850's scarce block RAM tiles for ~256 LUTs and a little power. Keeping both attributes for all three codes is still the right call — **uniform RTL is worth more than 0.05 W**, and "one datapath" stops meaning much if each code needs its own attributes.
+
+### If power has to come down
+
+A zero-power alternative exists for `syn_mem`: keep it in block RAM and add one pipeline register, so the long chain starts at a fabric flop instead of the RAM output.
+
+```systemverilog
+  logic [Z-1:0] syn_raw, syn_q;
+  // S_SETUP / S_C_SETUP:  syn_raw <= syn_mem[layer_q];
+  always_ff @(posedge clk) syn_q <= syn_raw;
+```
+
+128 flip-flops, no LUTs, no extra power, and the block RAM tiles stay. It is safe because `syn_q` is first used at c3 of the first edge, four cycles after `S_SETUP`. It is not needed now — r850's syndrome memory is not on a critical path and r400 already closes — but it is the lever if a measured power number pushes either code over 1 W.
+
+**The structural fix is `cn_mem`.** Chunked to eight lanes per entry it goes from 78.5 tiles to about 20 on r850, 39.5 to 12 on r400, 54 to 21 on r700 — which takes block RAM from 71% to 29% at the worst end, cuts the largest contributor to dynamic power, and frees 30–60 tiles for M4 and M6. That is now the highest-value remaining change to the decoder.
+
 ## Where this leaves the claim
 
 | | r850 | r700 | r400 |
@@ -172,7 +216,7 @@ LUT utilisation stays under 45% for all three, and r850 gets two of its scarce t
 | Row degree | 27 | 14 | 7 |
 | Functional, unmodified RTL | ✅ | ✅ | ✅ |
 | Cycles per iteration | 8,147 | 10,149 | 14,127 |
-| Timing at 125 MHz | ❌ −0.040 ns, 1 endpoint | ✅ +0.081 ns | ❌ −0.042 ns, 2 endpoints |
+| Timing at 125 MHz | ❌ −0.040 ns → fix pending | ✅ +0.081 ns | ✅ **+0.092 ns** with the fix |
 | Slice LUTs | 44.2% | 43.1% | 41.0% |
 | Block RAM | **71.1%** | 51.8% | 43.2% |
 | Dynamic power | ❌ 1.245 W est. | ✅ 0.952 W meas. | ⚠️ 0.941 W est. |
