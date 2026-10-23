@@ -67,6 +67,7 @@ Each writes into `results/` with a header recording the commit, parameters and s
 | File | Experiment | Focus point |
 |---|---|---|
 | `sweep_e1.py` | E1: FER and efficiency against QBER | The first sweep that showed a fixed-rate code leaking 4.3× the minimum at 1% QBER |
+| `sweep_e3.py` | E3: the mask rate and I_max against throughput, latency, energy and secret key rate | Puts the model's iteration counts through the *implemented* decoder's cycle model, so the throughput column describes real hardware |
 | `sweep_c1.py` | C1: which mask covers which QBER | Selects the lowest-leakage mask meeting a FER target — the choice the PS makes at run time |
 | `probe_puncturing.py` | Does puncturing high-degree columns help? | It helps inside a 10% budget and backfires beyond it |
 | `sweep_e2.py` | E2: quantisation study | Compares every fixed-point configuration against the float model on identical frames |
@@ -210,6 +211,7 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `c1_rate_adaptation/` | The 10% puncture budget, and the high-degree puncturing probe |
 | `e2_quantisation/` | Word widths: 6-bit messages and 7–8-bit APP are the cliff edge |
 | `bench_decoder/` | Numba speed-up and the cost of a 10⁵-frame point |
+| `e3_throughput_tradeoff/` | E3: REQ-PERF-04 is met at a mask without puncturing (71.6 Mbit/s at Q=5%), and the secret-key optimum sits 1–2 mask steps below the efficiency optimum |
 | `e5_key_rate/` | Key rate against distance; efficiency decides maximum range |
 | `m3_code_design/`, `_v2/`, `_v3/` | The three code-design passes; `_v3/README.md` tells the whole story |
 | `m3_margin_1.05/`, `_1.10/` | Efficiency against iterations trade-off |
