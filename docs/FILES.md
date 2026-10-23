@@ -212,6 +212,7 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `c1_rate_adaptation/` | The 10% puncture budget, and the high-degree puncturing probe |
 | `e2_quantisation/` | Word widths: 6-bit messages and 7–8-bit APP are the cliff edge |
 | `bench_decoder/` | Numba speed-up and the cost of a 10⁵-frame point |
+| `stage10_other_codes/` | The same RTL on r850 (degree 27): functionally exact with four lines changed, 71% BRAM, and timing short by 40 ps on the layer-pointer ROM path |
 | `power_saif/` | **Power, measured**: 0.952 W dynamic at High confidence, 9.13 nJ/bit at Q=3%. Block RAM power turned out *lower* than estimated, clock power two thirds higher |
 | `e3_throughput_tradeoff/` | E3: REQ-PERF-04 is met at a mask without puncturing (71.6 Mbit/s at Q=5%), and the secret-key optimum sits 1–2 mask steps below the efficiency optimum |
 | `e5_key_rate/` | Key rate against distance; efficiency decides maximum range |
