@@ -1,0 +1,9 @@
+Time resolution is 1 ps
+vectors: D:/QKD-Key-Distillation/tv/r850_q01_m16s32/
+mask: 464 key columns, 59392 key bits
+frame 0: ok=1 iters=7 (expected ok=1 iters=7), 61111 cycles
+frame 1: ok=1 iters=8 (expected ok=1 iters=8), 69797 cycles
+frame 2: ok=1 iters=7 (expected ok=1 iters=7), 61111 cycles
+frame 3: ok=1 iters=8 (expected ok=1 iters=8), 69797 cycles
+STAGE 11 PASSED
+$finish called at time : 2193520 ns : File "D:/QKD-Key-Distillation/tb/tb_ldpc_decoder_chunk.sv" Line 193

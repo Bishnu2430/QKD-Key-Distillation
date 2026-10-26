@@ -134,6 +134,8 @@ These live on disk but are **not tracked in git** (see "Not in git" below).
 | `stages/01-syndrome-checker.md` | **Stage 1, complete**: full RTL, full testbench, every click | The rotation function `dbl[k +: Z]` — get it backwards and every layer mismatches |
 | `stages/02-layer-datapath.md` | **Stage 2, complete**: the arithmetic core, plus the rotator-sharing optimisation in step 7 | The APP memory needs exactly one read and one write port, or synthesis cannot infer block RAM |
 | `stages/03-iteration-loop.md` | **Stage 3, complete**: the check-message memory and the iteration loop | The compressed record (min1, min2, idx, one sign bit per edge) is a *lossless* encoding of every message a layer sent, in a quarter of the bits |
+| `stages/12-axi-wrapper.md` | **Stage 12**: AXI4-Lite control and one AXI4-Stream each way | Three packets on one input stream, TLAST-delimited, because the key length depends on the mask the wrapper has only just received |
+| `stages/11-chunked-records.md` | **Stage 11**: `cn_mem` four chunks deep, addressed `{layer, chunk}` | A block RAM is 512 or 1,024 deep and the record array is 154 — the width was never the problem, the depth was |
 | `stages/10-other-codes.md` | **Stage 10**: swap the code, measure what changes | Four lines change; everything else derives from the generated header. r850's degree 27 is the timing risk |
 | `stages/09-power-saif.md` | **Stage 9**: capture switching activity from the implemented netlist and report power from it | `Simulation Activity File ---` in a power report means Vivado guessed the toggle rates |
 | `stages/08-split-arithmetic.md` | **Stage 8**: R_old reconstructed beside the rotate, T registered | Everything `pos` feeds can be computed a cycle early — the record and the syndrome are fixed for the whole layer |
@@ -212,6 +214,7 @@ Each directory holds raw data, a machine-readable header and a `README.md` that 
 | `c1_rate_adaptation/` | The 10% puncture budget, and the high-degree puncturing probe |
 | `e2_quantisation/` | Word widths: 6-bit messages and 7–8-bit APP are the cliff edge |
 | `bench_decoder/` | Numba speed-up and the cost of a 10⁵-frame point |
+| `stage11_chunked_records/` | **The decoder finished**: r850 closes at +0.036 ns with block RAM down 69% → 27% and power 1.061 → 0.713 W. All three codes meet every requirement |
 | `stage10_other_codes/` | The same RTL on r850 (degree 27): functionally exact with four lines changed, 71% BRAM, and timing short by 40 ps on the layer-pointer ROM path |
 | `power_saif/` | **Power, measured**: 0.952 W dynamic at High confidence, 9.13 nJ/bit at Q=3%. Block RAM power turned out *lower* than estimated, clock power two thirds higher |
 | `e3_throughput_tradeoff/` | E3: REQ-PERF-04 is met at a mask without puncturing (71.6 Mbit/s at Q=5%), and the secret-key optimum sits 1–2 mask steps below the efficiency optimum |
