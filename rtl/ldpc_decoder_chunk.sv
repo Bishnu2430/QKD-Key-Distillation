@@ -1,5 +1,5 @@
 `default_nettype none
-`include "v3_mother_0_r850_params.svh"
+`include "v3_mother_1_r700_params.svh"
 
 // Stage 7: the same decoder, one edge per clock.
 //
@@ -205,8 +205,8 @@ module ldpc_decoder_chunk (
   logic [Z-1:0]          key_q;
 
   initial begin
-    $readmemh("v3_mother_0_r850_edges.mem",     edge_rom);
-    $readmemh("v3_mother_0_r850_layer_ptr.mem", layer_ptr_rom);
+    $readmemh("v3_mother_1_r700_edges.mem",     edge_rom);
+    $readmemh("v3_mother_1_r700_layer_ptr.mem", layer_ptr_rom);
   end
 
   always_ff @(posedge clk) begin

@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 `default_nettype none
-`include "v3_mother_0_r850_params.svh"
+`include "v3_mother_1_r700_params.svh"
 
 module tb_ldpc_decoder_chunk;
 
@@ -20,7 +20,7 @@ module tb_ldpc_decoder_chunk;
   //                        4 frames, 13-17 iterations.        N_FRAMES up to 4.
   // Mind the q03 / q05 in the name: the two sets differ in QBER as well as in
   // how many columns are shortened.
-  localparam string       DIR      = "D:/QKD-Key-Distillation/tv/r850_q01_m16s32/";
+  localparam string       DIR      = "D:/QKD-Key-Distillation/tv/r700_q03_m16s32/";
   localparam int unsigned N_FRAMES = 4;
 
   logic clk = 1'b0, rst_n = 1'b0;

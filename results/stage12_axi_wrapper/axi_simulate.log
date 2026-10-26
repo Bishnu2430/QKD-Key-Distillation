@@ -1,0 +1,11 @@
+Time resolution is 1 ps
+vectors: D:/QKD-Key-Distillation/tv/r700_q05_m16s125/
+ID: 514b4431
+frame 0: ok=1 iters=13  (expected ok=1 iters=13)  742 beats
+frame 1: ok=1 iters=16  (expected ok=1 iters=16)  742 beats
+FRAMES_OK   = 2
+FRAMES_FAIL = 0
+CYCLES      = 185649
+STAGE 12 PASSED
+$finish called at time : 2701320 ns : File "D:/QKD-Key-Distillation/tb/tb_ldpc_axi.sv" Line 225
+INFO: xsimkernel Simulation Memory Usage: 21716 KB (Peak: 21716 KB), Simulation CPU Usage: 44655 ms
