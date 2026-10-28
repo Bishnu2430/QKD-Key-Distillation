@@ -18,6 +18,10 @@ Header word fields (proposed): `frame_seq[31:0]`, `mask_id[7:0]`, `A[7:0]`, `fla
 
 ## 2. AXI4-Lite register map (proposed)
 
+**Base address: `0x4000_0000`**, assigned to `ldpc_axi_wrap_0/S_AXI` by the Address Editor in the stage-13 block design, with a 4 KB range. Every offset below is relative to it, so `STATUS` is at `0x4000_0008`.
+
+This is the one number software cannot derive from anything else in the repository: it comes out of the block design, and it changes if the design is rebuilt with a different address assignment. Check it against the Address Editor before trusting it.
+
 | Offset | Name | Access | Fields |
 |---|---|---|---|
 | 0x00 | `ID` | RO | Magic `0x514B4431` ("QKD1"), version |
