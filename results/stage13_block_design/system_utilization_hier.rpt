@@ -1,0 +1,50 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Wed Oct 28 11:10:25 2026
+| Host         : hp running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 4 -file D:/QKD-Key-Distillation/results/stage13_block_design/system_utilization_hier.rpt
+| Design       : qkd_system_wrapper
+| Device       : xc7z020clg400-1
+| Speed File   : -1
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++--------------------------------------------------------+--------------------------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|                        Instance                        |                                  Module                                  | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++--------------------------------------------------------+--------------------------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| qkd_system_wrapper                                     |                                                                    (top) |      28241 |      27553 |     568 |  120 | 18996 |     52 |      3 |          0 |
+|   qkd_system_i                                         |                                                               qkd_system |      28241 |      27553 |     568 |  120 | 18996 |     52 |      3 |          0 |
+|     ldpc_axi_wrap_0                                    |                                             qkd_system_ldpc_axi_wrap_0_0 |      25489 |      24928 |     548 |   13 | 15217 |     44 |      1 |          0 |
+|       inst                                             |                               qkd_system_ldpc_axi_wrap_0_0_ldpc_axi_wrap |      25489 |      24928 |     548 |   13 | 15217 |     44 |      1 |          0 |
+|         u_axi                                          |                                    qkd_system_ldpc_axi_wrap_0_0_ldpc_axi |      25489 |      24928 |     548 |   13 | 15217 |     44 |      1 |          0 |
+|     axi_dma_0                                          |                                                   qkd_system_axi_dma_0_0 |       1567 |       1453 |      10 |  104 |  2336 |      8 |      2 |          0 |
+|       U0                                               |                                           qkd_system_axi_dma_0_0_axi_dma |       1567 |       1453 |      10 |  104 |  2336 |      8 |      2 |          0 |
+|         INCLUDE_MM2S_SOF_EOF_GENERATOR.I_MM2S_DMA_MNGR |                                 qkd_system_axi_dma_0_0_axi_dma_mm2s_mngr |         18 |         18 |       0 |    0 |    66 |      0 |      0 |          0 |
+|         INCLUDE_S2MM_SOF_EOF_GENERATOR.I_S2MM_DMA_MNGR |                                 qkd_system_axi_dma_0_0_axi_dma_s2mm_mngr |         28 |         28 |       0 |    0 |    84 |      0 |      0 |          0 |
+|         I_AXI_DMA_REG_MODULE                           |                                qkd_system_axi_dma_0_0_axi_dma_reg_module |        134 |        134 |       0 |    0 |   247 |      0 |      0 |          0 |
+|         I_PRMRY_DATAMOVER                              |                                     qkd_system_axi_dma_0_0_axi_datamover |       1369 |       1255 |      10 |  104 |  1901 |      8 |      2 |          0 |
+|     axi_mem_intercon                                   |                                            qkd_system_axi_mem_intercon_0 |        567 |        556 |      10 |    1 |   687 |      0 |      0 |          0 |
+|       s00_couplers                                     |                                                 s00_couplers_imp_1NUBRKJ |        171 |        163 |       8 |    0 |   215 |      0 |      0 |          0 |
+|         auto_pc                                        |                                qkd_system_axi_mem_intercon_imp_auto_pc_0 |        171 |        163 |       8 |    0 |   215 |      0 |      0 |          0 |
+|       s01_couplers                                     |                                                 s01_couplers_imp_1DLVQJ9 |        120 |        118 |       2 |    0 |   146 |      0 |      0 |          0 |
+|         auto_pc                                        |                                qkd_system_axi_mem_intercon_imp_auto_pc_1 |        120 |        118 |       2 |    0 |   146 |      0 |      0 |          0 |
+|       xbar                                             |                                   qkd_system_axi_mem_intercon_imp_xbar_0 |        276 |        275 |       0 |    1 |   326 |      0 |      0 |          0 |
+|         inst                                           | qkd_system_axi_mem_intercon_imp_xbar_0_axi_crossbar_v2_1_38_axi_crossbar |        276 |        275 |       0 |    1 |   326 |      0 |      0 |          0 |
+|     axi_smc                                            |                                                     qkd_system_axi_smc_0 |        603 |        602 |       0 |    1 |   723 |      0 |      0 |          0 |
+|       inst                                             |                                             qkd_system_axi_smc_0_bd_4efb |        603 |        602 |       0 |    1 |   723 |      0 |      0 |          0 |
+|         s00_entry_pipeline                             |                      qkd_system_axi_smc_0_s00_entry_pipeline_imp_1V03K5M |        407 |        407 |       0 |    0 |   426 |      0 |      0 |          0 |
+|         switchboards                                   |                            qkd_system_axi_smc_0_switchboards_imp_13QHDJ8 |         92 |         92 |       0 |    0 |   170 |      0 |      0 |          0 |
++--------------------------------------------------------+--------------------------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

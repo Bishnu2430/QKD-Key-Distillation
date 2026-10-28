@@ -21,7 +21,7 @@
 // three packets, waits for STATUS.done, then reads STATUS.ok and LAST_ITERS
 // while the corrected key arrives on the output stream.
 module ldpc_axi #(
-    parameter int unsigned AXI_ADDR_W = 8
+    parameter int unsigned AXI_ADDR_W = 12
 ) (
     input  wire                     aclk,
     input  wire                     aresetn,
