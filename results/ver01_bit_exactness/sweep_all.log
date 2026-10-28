@@ -1,0 +1,29 @@
+running 11 points, 1000 frames each, 4 at a time
+  done r850_q01_m16s32 in 973s
+  done r850_q01_m16s0 in 1252s
+  done r700_q03_m16s0 in 1308s
+  done r850_q02_m16s200 in 1366s
+  done r700_q03_m16s32 in 1059s
+  done r700_q04_m16s80 in 1567s
+  done r700_q06_m16s180 in 2102s
+  done r400_q08_m16s0 in 1739s
+  done r400_q08_m16s32 in 1592s
+  done r700_q05_m16s125 in 3248s
+  done r400_q10_m16s64 in 1353s
+
+==============================================================
+  POINT                FRAMES DECODED  FAILED   MISM  VERDICT
+==============================================================
+  r850_q01_m16s0         1000    1000       0      0  PASSED
+  r850_q01_m16s32        1000    1000       0      0  PASSED
+  r850_q02_m16s200       1000     997       3      0  PASSED
+  r700_q03_m16s0         1000    1000       0      0  PASSED
+  r700_q03_m16s32        1000    1000       0      0  PASSED
+  r700_q04_m16s80        1000    1000       0      0  PASSED
+  r700_q05_m16s125       1000     906      94      0  PASSED
+  r700_q06_m16s180       1000     995       5      0  PASSED
+  r400_q08_m16s0         1000    1000       0      0  PASSED
+  r400_q08_m16s32        1000    1000       0      0  PASSED
+  r400_q10_m16s64        1000    1000       0      0  PASSED
+==============================================================
+  11000 frames, 0 mismatches, 0 point(s) timed out
