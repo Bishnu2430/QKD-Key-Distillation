@@ -43,3 +43,12 @@ docs/log/
 
 # Switching-activity dumps: large, regenerable from a netlist simulation
 *.saif
+
+# REQ-VER-01 bulk vector sets: build artifacts, regenerate with scripts/
+tv/ver01/
+
+# Verilator sweep work directory (per-point decoder + testbench copies)
+build/
+
+# ... but simulation evidence filed under results/ is tracked, not a work log
+!results/**/*.log
