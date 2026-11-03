@@ -1,0 +1,7 @@
+{
+  "generated": "2026-10-28",
+  "tag_bits": 64,
+  "seed_rng": 20241028,
+  "frames": 4,
+  "note": "seed is n_key + tag_bits - 1 bits, spec section 4"
+}
