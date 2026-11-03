@@ -1,0 +1,14 @@
+{
+  "generated": "2026-11-03",
+  "n_bits": 1024,
+  "l_bits": 256,
+  "n_words": 16,
+  "seed_bits": 1279,
+  "seed_words": 20,
+  "l_words": 4,
+  "n_chunks": 1,
+  "chunk_bits": 256,
+  "rng_seed": 101,
+  "out_weight": 135,
+  "bit_order": "LSB-first within each 64-bit word (spec section 2)"
+}

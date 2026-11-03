@@ -1,0 +1,7 @@
+Time resolution is 1 ps
+vectors: D:/QKD-Key-Distillation/tv/pa/n1024_l512/
+N=1024 L=512 -> 16 block words, 24 seed words, 2 chunks
+cycles: 170 total, 55 hashing (predicted ~52 = 2 chunks x (16 + 10))
+throughput at 125 MHz: 2327.27 Mbit/s hashing, 752.94 Mbit/s including ingest
+STAGE 15 PASSED
+$finish called at time : 1428 ns : File "D:/QKD-Key-Distillation/tb/tb_toeplitz_pa.sv" Line 207
